@@ -5,14 +5,11 @@ using UnityEngine;
 public class Console : MonoBehaviour {
 	static public Console instance;
 	public delegate void deleg(string par);
-	private deleg func;
+	
 	private Dictionary<string, deleg> functions = new Dictionary<string, deleg>();
 
-	void Start () {
+	void Awake () {
 		instance = this;
-		deleg nFunc = CreateObj;
-		AddCall("new", nFunc);
-
 	}
 	
 	public void AddCall(string name, deleg method){
@@ -23,16 +20,9 @@ public class Console : MonoBehaviour {
 		}
     }
 
-	public void CallFunction(string name, string par){
-		name.ToLower();
-		
-		if (functions.ContainsKey(name)){
-			functions[name].Invoke(par);
-		}
-	}
-
-	public void ParceInstruction(string instruction){
+	public string CallFunction(string instruction){
 		instruction.ToLower();
+		string outLog;
 		string funcName = "";
 		string par = "";
 		
@@ -62,10 +52,13 @@ public class Console : MonoBehaviour {
 			i++;
 		}
 
-		CallFunction(funcName, par);
-	}
+		if (functions.ContainsKey(funcName)){
+			outLog = "Comando Ejecutado: " + funcName + " \nParametro: " + par + "\n\n";
+			functions[funcName](par);
+		}
+		else
+			outLog = "Comando " + funcName + " no existe\n\n";
 
-	private void CreateObj(string objName){
-		GameObject instance = Instantiate(Resources.Load(objName, typeof(GameObject))) as GameObject;
+		return outLog;
 	}
 }
