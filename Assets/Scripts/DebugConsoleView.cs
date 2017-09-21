@@ -44,7 +44,20 @@ public class DebugConsoleView : MonoBehaviour
 	string LogCommand(params string[] args)
 	{
 		string str = "";
+		
+		if (args[0].Length == 1){				// if arg is a var			
+			if (char.IsLetter(args[0][0])){
+				if (vars.ContainsKey(args[0])){
+					str = vars[args[0]];
 
+					return str;
+				}
+				else
+					return "Var " + args[0] + " is an undeclared variable...";
+			}
+		}
+		
+		
 		if (args != null)
 		{
 			for (int i = 0; i < args.Length; i++)

@@ -109,13 +109,22 @@ public class Parser
 						else
 							return true;
 					}
-					else if (currentToken.Type == Tokenizer.TokenType.Ident && currentToken.Lexeme.Length == 1 && cmd.CommandName == "SaveVar"){
+					else if (currentToken.Type == Tokenizer.TokenType.Ident && currentToken.Lexeme.Length == 1 && (cmd.CommandName == "SaveVar" || cmd.CommandName == "log")){
 						command.Args.Add(currentToken.Lexeme);
 						currentToken = tokenizer.GetNextToken();
 
 						if (currentToken.Type == Tokenizer.TokenType.EOL)
 						{
 							return true;
+						}
+						else if (currentToken.Type == Tokenizer.TokenType.CloseParent)
+						{
+							currentToken = tokenizer.GetNextToken();
+
+							if (currentToken.Type != Tokenizer.TokenType.EOL)
+								return false;
+							else
+								return true;
 						}
 						else
 							return false;
