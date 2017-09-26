@@ -2,81 +2,107 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Command
-{
-	public string CommandName;
-	public List<string> Args;
-}
-
 public class Parser 
 {
 	enum State
 	{
-		CommandName,
+		Ident,
 		Arguments
 	}
 
-	Tokenizer tokenizer = new Tokenizer();
-	Command command = new Command();
-	State state = State.CommandName;
+	List<Instruction> instructions = new List<Instruction>();
 
-	void Reset()
+	Tokenizer tokenizer = new Tokenizer();
+
+	State state = State.Ident;
+
+	Tables tables;
+
+	public Parser(Tables tables)
 	{
-		command.CommandName = null;
-		command.Args = new List<string>();
-		state = State.CommandName;
+		this.tables = tables;
 	}
 
-	public bool Parse(string str, out Command cmd)
+	public void Reset()
+	{
+		tables.Clear();
+		state = State.Ident;
+		instructions.Clear();
+	}
+
+	public bool Parse(string str, out List<Instruction> instructions)
 	{
 		Reset();
 		tokenizer.Start(str);
 
-		cmd = command;
+		Instruction currentInstruction = new Instruction();
+
+		instructions = this.instructions;
 
 		Tokenizer.Token currentToken = tokenizer.GetNextToken();
-	
+
 		if (currentToken.Type == Tokenizer.TokenType.Empty)
 		{
 			return false;
 		}
 		
-		while (currentToken.Type != Tokenizer.TokenType.EOL && currentToken.Type != Tokenizer.TokenType.Unknown)
+		while (currentToken.Type != Tokenizer.TokenType.EOF && currentToken.Type != Tokenizer.TokenType.Unknown)
 		{
 			switch(state)
 			{
-				case State.CommandName:
+				case State.Ident:
 					if (currentToken.Type != Tokenizer.TokenType.Ident)
 						return false;
 
-					command.CommandName = currentToken.Lexeme; // Take current lexeme as command name
+					string ident = currentToken.Lexeme;
+
 					currentToken = tokenizer.GetNextToken(); // skip to next token
-					
-					if (currentToken.Type == Tokenizer.TokenType.OpenParent)
+
+					if (currentToken.Type == Tokenizer.TokenType.Colon) // If it's a colon, then the ident is a Label
 					{
-						state = State.Arguments;
-						currentToken = tokenizer.GetNextToken(); // Skip parenthesis
-					}
-					else if (currentToken.Type == Tokenizer.TokenType.Equal)
-					{
-						if (cmd.CommandName.Length < 1 || cmd.CommandName.Length > 1)
+						if (!tables.AddLabel(ident, instructions.Count)) // Couldn't add label, probably already exists
 							return false;
 						
-						cmd.Args.Add(cmd.CommandName);
-						cmd.CommandName = "SaveVar";
-						state = State.Arguments;
-						currentToken = tokenizer.GetNextToken(); // Skip equal
+						currentInstruction = new Instruction(); 
+						currentInstruction.OpCode = OpCodes.NOP;
+						instructions.Add(currentInstruction); // We add a NOP instruction just to be sure 
+
+						currentToken = tokenizer.GetNextToken(); // skip to next token
+
+						if (currentToken.Type != Tokenizer.TokenType.EOL && currentToken.Type != Tokenizer.TokenType.EOF)
+						{
+							return false;
+						}
 					}
-					else if (currentToken.Type == Tokenizer.TokenType.EOL)
-						return true;
-					else 
-						return false;
+					else // If it isn't, then probably it's an instruction
+					{
+						int opCode = 0;
+
+						if (!tables.GetInstrLookUp(ident, out opCode))
+							return false;
+
+						currentInstruction = new Instruction();
+
+						currentInstruction.OpCode = opCode;
+
+						if (currentToken.Type == Tokenizer.TokenType.OpenParent)
+						{
+							state = State.Arguments;
+							currentToken = tokenizer.GetNextToken(); // Skip parenthesis
+
+							currentInstruction.Arguments = new List<string>();
+						}
+						else if (currentToken.Type != Tokenizer.TokenType.EOL && currentToken.Type != Tokenizer.TokenType.EOF)
+							return false;
+					}
+
 				break;
 
 				case State.Arguments:
 					if (currentToken.Type == Tokenizer.TokenType.Number || currentToken.Type == Tokenizer.TokenType.String)
 					{
-						command.Args.Add(currentToken.Lexeme);
+						currentInstruction.Arguments.Add(currentToken.Lexeme);
+
 						currentToken = tokenizer.GetNextToken();
 						
 						if (currentToken.Type == Tokenizer.TokenType.Comma)
@@ -85,49 +111,37 @@ public class Parser
 						{
 							currentToken = tokenizer.GetNextToken();
 
-							if (currentToken.Type != Tokenizer.TokenType.EOL)
+							if (currentToken.Type != Tokenizer.TokenType.EOL && currentToken.Type != Tokenizer.TokenType.EOF)
 								return false;
-							else
-								return true;
-						}
-						else if (currentToken.Type == Tokenizer.TokenType.EOL)
-						{
-							if (cmd.CommandName == "SaveVar")
-								return true;
-							else
-								return false;
+							
+							instructions.Add(currentInstruction);
+
+							state = State.Ident;
 						}
 						else
 							return false; // Syntax error! 
+					}
+					else if (currentToken.Type == Tokenizer.TokenType.Ident) // If there's an identifier, then maybe is a GoTo
+					{
+						Label label;
+						
+						if (!tables.GetLabelByName(currentToken.Lexeme, out label))
+							return false;
+
+						currentInstruction.Arguments.Add(label.Index.ToString());
+
+						currentToken = tokenizer.GetNextToken();
 					}
 					else if (currentToken.Type == Tokenizer.TokenType.CloseParent)
 					{
 						currentToken = tokenizer.GetNextToken();
 
-						if (currentToken.Type != Tokenizer.TokenType.EOL)
+						if (currentToken.Type != Tokenizer.TokenType.EOL && currentToken.Type != Tokenizer.TokenType.EOF)
 							return false; // Syntax error! 
-						else
-							return true;
-					}
-					else if (currentToken.Type == Tokenizer.TokenType.Ident && currentToken.Lexeme.Length == 1 && (cmd.CommandName == "SaveVar" || cmd.CommandName == "log")){
-						command.Args.Add(currentToken.Lexeme);
-						currentToken = tokenizer.GetNextToken();
 
-						if (currentToken.Type == Tokenizer.TokenType.EOL)
-						{
-							return true;
-						}
-						else if (currentToken.Type == Tokenizer.TokenType.CloseParent)
-						{
-							currentToken = tokenizer.GetNextToken();
+						instructions.Add(currentInstruction);
 
-							if (currentToken.Type != Tokenizer.TokenType.EOL)
-								return false;
-							else
-								return true;
-						}
-						else
-							return false;
+						state = State.Ident;
 					}
 					else
 					{
@@ -135,9 +149,18 @@ public class Parser
 					}
 				break;
 			}
+
+			SkipEOL(); // Skips End of Lines
+			
+			currentToken = tokenizer.GetCurrentToken();
 		}
 
 		return true;
 	}
 
+	void SkipEOL()
+	{
+		while (tokenizer.GetCurrentToken().Type == Tokenizer.TokenType.EOL)
+			tokenizer.GetNextToken();
+	}
 }
