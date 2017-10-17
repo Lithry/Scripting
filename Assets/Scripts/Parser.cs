@@ -2,19 +2,39 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/*
+	; COMMENT
+
+	FUNC PEPE 
+
+		VAR W
+
+		POP C
+		POP B
+		POP A
+
+
+		RET
+	ENDFUNC
+
+	LABEL:
+		VAR X
+
+		MOV X, 5
+
+		PUSH A
+		PUSH B
+		PUSH C
+		JSR PEPE
+
+		JMP LABEL
+
+ */
+
 public class Parser 
 {
-	enum State
-	{
-		Ident,
-		Arguments
-	}
-
-	List<Instruction> instructions = new List<Instruction>();
-
 	Tokenizer tokenizer = new Tokenizer();
-
-	State state = State.Ident;
+	ErrorManager errorManager = new ErrorManager();
 
 	Tables tables;
 
@@ -26,19 +46,112 @@ public class Parser
 	public void Reset()
 	{
 		tables.Clear();
-		state = State.Ident;
-		instructions.Clear();
 	}
 
-	public bool Parse(string str, out List<Instruction> instructions)
+	public bool Parse(string str)
 	{
 		Reset();
+
 		tokenizer.Start(str);
 
-		Instruction currentInstruction = new Instruction();
+		// Parse Vars and Labels
+		if (!Pass1())
+			return false;
 
-		instructions = this.instructions;
+		// Rewind tokenizer to start the
+		// second pass from the beginning
+		tokenizer.Rewind();
 
+		// Parse instructions
+		if (!Pass2())
+			return false;
+
+		return true;
+	}
+
+	// Parse Vars and Labels
+	bool Pass1()
+	{
+		Tokenizer.Token currentToken = tokenizer.GetNextToken();
+
+		if (currentToken.Type == Tokenizer.TokenType.Empty)
+		{
+			return false;
+		}
+
+		int instrIdx = 0;
+		
+		while (currentToken.Type != Tokenizer.TokenType.EOF && currentToken.Type != Tokenizer.TokenType.Unknown)
+		{
+			// ===================================================================
+			// Skip end of lines
+			if (currentToken.Type == Tokenizer.TokenType.EOL)
+			{
+				currentToken = tokenizer.GetNextToken();
+			}
+			// ===================================================================
+			// Parse variables
+ 			else if (currentToken.Type == Tokenizer.TokenType.Rsvd_Var)
+			{
+				currentToken = tokenizer.GetNextToken();
+				
+				if (currentToken.Type == Tokenizer.TokenType.Ident)
+				{
+					if (!tables.AddVar(currentToken.Lexeme))
+					{
+						// TODO: Log error var already exists
+						return false;
+					}
+				}
+				else
+				{
+					// TODO: Log error ident expected
+					return false;
+				}
+
+				currentToken = tokenizer.GetNextToken();
+			}
+			// ===================================================================
+			// Parse instructions and labels			
+			else if (currentToken.Type == Tokenizer.TokenType.Ident)
+			{
+				string ident = currentToken.Lexeme;
+
+				currentToken = tokenizer.GetNextToken();
+
+				// ===================================================================
+				// Is it a label?
+				if (currentToken.Type == Tokenizer.TokenType.Colon)
+				{
+					tables.AddLabel(ident, instrIdx);
+
+					currentToken = tokenizer.GetNextToken();
+				}
+				// ===================================================================
+				// It's an instruction
+				else
+				{
+					instrIdx++; // Increment counter
+
+					// Skip to next line
+					currentToken = tokenizer.SkipToNextLine();
+				}
+
+			}
+			else
+			{
+				errorManager.ErrorLog("Unexpected Token");
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	// Parse instructions
+	bool Pass2()
+	{
+		Instruction currentInstruction;
 		Tokenizer.Token currentToken = tokenizer.GetNextToken();
 
 		if (currentToken.Type == Tokenizer.TokenType.Empty)
@@ -48,119 +161,185 @@ public class Parser
 		
 		while (currentToken.Type != Tokenizer.TokenType.EOF && currentToken.Type != Tokenizer.TokenType.Unknown)
 		{
-			switch(state)
+			// ===================================================================
+			// Skip end of lines
+			if (currentToken.Type == Tokenizer.TokenType.EOL)
 			{
-				case State.Ident:
-					if (currentToken.Type != Tokenizer.TokenType.Ident)
+				currentToken = tokenizer.GetNextToken();
+			}
+			// ===================================================================
+			// Skip variables declaration 
+ 			else if (currentToken.Type == Tokenizer.TokenType.Rsvd_Var)
+			{
+				currentToken = tokenizer.GetNextToken(); // Skip the VAR reserved word
+				
+				currentToken = tokenizer.GetNextToken(); // Skip VAR's identifier
+			}
+			// ===================================================================
+			// Parse instructions and labels			
+			else if (currentToken.Type == Tokenizer.TokenType.Ident)
+			{
+				string ident = currentToken.Lexeme;
+
+				currentToken = tokenizer.GetNextToken();
+
+				// ===================================================================
+				// Is it a label? Skip it
+				if (currentToken.Type == Tokenizer.TokenType.Colon)
+				{
+					currentToken = tokenizer.GetNextToken();
+				}
+				// ===================================================================
+				// It's an instruction
+				else
+				{
+					InstrDecl instr;
+
+					if (!tables.GetInstrLookUp(ident, out instr))
+					{
+						errorManager.ErrorLog("Syntax Error");
 						return false;
-
-					string ident = currentToken.Lexeme;
-
-					currentToken = tokenizer.GetNextToken(); // skip to next token
-
-					if (currentToken.Type == Tokenizer.TokenType.Colon) // If it's a colon, then the ident is a Label
-					{
-						if (!tables.AddLabel(ident, instructions.Count)) // Couldn't add label, probably already exists
-							return false;
-						
-						currentInstruction = new Instruction(); 
-						currentInstruction.OpCode = OpCodes.NOP;
-						instructions.Add(currentInstruction); // We add a NOP instruction just to be sure 
-
-						currentToken = tokenizer.GetNextToken(); // skip to next token
-
-						if (currentToken.Type != Tokenizer.TokenType.EOL && currentToken.Type != Tokenizer.TokenType.EOF)
-						{
-							return false;
-						}
-					}
-					else // If it isn't, then probably it's an instruction
-					{
-						int opCode = 0;
-
-						if (!tables.GetInstrLookUp(ident, out opCode))
-							return false;
-
-						currentInstruction = new Instruction();
-
-						currentInstruction.OpCode = opCode;
-
-						if (currentToken.Type == Tokenizer.TokenType.OpenParent)
-						{
-							state = State.Arguments;
-							currentToken = tokenizer.GetNextToken(); // Skip parenthesis
-
-							currentInstruction.Arguments = new List<string>();
-						}
-						else if (currentToken.Type != Tokenizer.TokenType.EOL && currentToken.Type != Tokenizer.TokenType.EOF)
-							return false;
 					}
 
-				break;
+					currentInstruction = new Instruction();
+					currentInstruction.OpCode = instr.OpCode;
 
-				case State.Arguments:
-					if (currentToken.Type == Tokenizer.TokenType.Number || currentToken.Type == Tokenizer.TokenType.String)
+					if (instr.ParamsCount > 0)
+						currentInstruction.Values = new Value[instr.ParamsCount];
+
+					// ===================================================================
+					// Parse params
+					for (int i = 0; i < instr.ParamsCount; i++)
 					{
-						currentInstruction.Arguments.Add(currentToken.Lexeme);
-
-						currentToken = tokenizer.GetNextToken();
-						
-						if (currentToken.Type == Tokenizer.TokenType.Comma)
-							currentToken = tokenizer.GetNextToken(); // skip comma
-						else if (currentToken.Type == Tokenizer.TokenType.CloseParent)
+						// We have to skip the ','
+						if (i > 0)
 						{
 							currentToken = tokenizer.GetNextToken();
-
-							if (currentToken.Type != Tokenizer.TokenType.EOL && currentToken.Type != Tokenizer.TokenType.EOF)
+							if (currentToken.Type != Tokenizer.TokenType.Comma)
+							{
+								errorManager.ErrorLog("Comma Expected");
 								return false;
+							}
 							
-							instructions.Add(currentInstruction);
+							currentToken = tokenizer.GetNextToken();
+						}
 
-							state = State.Ident;
+						Tokenizer.TokenType t = currentToken.Type;
+						int flags = instr.ParamsFlags[i];
+
+						// ===================================================================
+						// Is it a variable or label?
+						if (t == Tokenizer.TokenType.Ident)
+						{
+							if ((flags & OpFlags.MemIdx) != 0)
+							{
+								VarDecl varDecl;
+								
+								if (!tables.GetVarByIdent(currentToken.Lexeme, out varDecl))
+								{
+									errorManager.ErrorLog("Variable Doesn´t Exist");
+									return false;
+								}
+								currentInstruction.Values[i].Type = OpType.MemIdx;
+								currentInstruction.Values[i].StackIndex = varDecl.Idx;
+							}
+							else if ((flags & OpFlags.InstrIdx) != 0)
+							{
+								LabelDecl label;
+								
+								if (!tables.GetLabelByName(currentToken.Lexeme, out label))
+								{
+									errorManager.ErrorLog("Label Doesn´t Exist");
+									return false;
+								}
+
+								currentInstruction.Values[i].Type = OpType.InstrIdx;
+								currentInstruction.Values[i].InstrIndex = label.Idx;
+							}
+							else if ((flags & OpFlags.HostAPICallIdx) != 0)
+							{
+								// TODO: host api calls
+							}
+						}
+						// ===================================================================
+						// Is it a literal value?
+						else if (t == Tokenizer.TokenType.Number || t == Tokenizer.TokenType.String)
+						{
+							if ((flags & OpFlags.Literal) == 0)
+							{	
+								errorManager.ErrorLog("Doesn´t Allow Literals");
+								return false;
+							}
+
+							if (t == Tokenizer.TokenType.Number)
+							{
+								if (StringUtil.IsStringFloat(currentToken.Lexeme))
+								{
+									float val = 0;
+									
+									currentInstruction.Values[i].Type = OpType.Float;
+
+									if (float.TryParse(currentToken.Lexeme, out val))
+										currentInstruction.Values[i].FloatLiteral = val;
+									else
+									{
+										errorManager.ErrorLog("Error Parsing Float Value");
+										return false;
+									}
+								}
+								else if (StringUtil.IsStringInt(currentToken.Lexeme))
+								{
+									int val = 0;
+									
+									currentInstruction.Values[i].Type = OpType.Int;
+
+									if (int.TryParse(currentToken.Lexeme, out val))
+										currentInstruction.Values[i].IntLiteral = val;
+									else
+									{
+										errorManager.ErrorLog("Error Parsing Int Value");
+										return false;
+									}
+								}
+								else if (StringUtil.IsStringHex(currentToken.Lexeme))
+								{
+									currentInstruction.Values[i].Type = OpType.Int;
+									currentInstruction.Values[i].IntLiteral = StringUtil.StrHexToInt(currentToken.Lexeme);
+								}
+								else 
+								{
+									errorManager.ErrorLog("Error Parsing Literal Value");
+									return false;
+								}
+							}
+							else
+							{
+								currentInstruction.Values[i].Type = OpType.String;
+								currentInstruction.Values[i].StringLiteral = currentToken.Lexeme;
+							}
 						}
 						else
-							return false; // Syntax error! 
-					}
-					else if (currentToken.Type == Tokenizer.TokenType.Ident) // If there's an identifier, then maybe is a GoTo
-					{
-						Label label;
-						
-						if (!tables.GetLabelByName(currentToken.Lexeme, out label))
+						{
+							errorManager.ErrorLog("Unexpected Token");
 							return false;
-
-						currentInstruction.Arguments.Add(label.Index.ToString());
-
-						currentToken = tokenizer.GetNextToken();
+						}
 					}
-					else if (currentToken.Type == Tokenizer.TokenType.CloseParent)
-					{
-						currentToken = tokenizer.GetNextToken();
 
-						if (currentToken.Type != Tokenizer.TokenType.EOL && currentToken.Type != Tokenizer.TokenType.EOF)
-							return false; // Syntax error! 
-
-						instructions.Add(currentInstruction);
-
-						state = State.Ident;
-					}
-					else
-					{
-						return false; // Syntax error!
-					}
-				break;
+					// Add the instruction to the stream
+					tables.AddInstrToStream(currentInstruction);
+					
+					// Skip to next token
+					currentToken = tokenizer.GetNextToken();
+				}
 			}
-
-			SkipEOL(); // Skips End of Lines
-			
-			currentToken = tokenizer.GetCurrentToken();
+			else
+			{
+				errorManager.ErrorLog("Unexpected Token");
+				return false;
+			}
 		}
 
 		return true;
 	}
 
-	void SkipEOL()
-	{
-		while (tokenizer.GetCurrentToken().Type == Tokenizer.TokenType.EOL)
-			tokenizer.GetNextToken();
-	}
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System.IO;
 
 public class CompileTest : MonoBehaviour 
 {
@@ -9,7 +10,6 @@ public class CompileTest : MonoBehaviour
 	public InputField inputField;
 
 	Compiler compiler = new Compiler();	
-	VirtualMachine vm = new VirtualMachine();
 
 	// Use this for initialization
 	void Awake () 
@@ -19,16 +19,9 @@ public class CompileTest : MonoBehaviour
 
 	void OnClick()
 	{
-		List<Instruction> program; 
-
-		if (compiler.Compile(inputField.text, out program))
+		if (compiler.Compile(inputField.text))
 		{
-			vm.Reset(program);
+			// TODO: Convert to bytecode and create Script
 		}
-	}
-
-	void Update()
-	{
-		vm.RunStep();
 	}
 }

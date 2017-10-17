@@ -8,12 +8,11 @@ public class Tokenizer
     public enum TokenType
     {
         Ident, 
-        OpenParent,
-        CloseParent, 
         Colon, // Dos puntos
         Comma,
         String,
         Number,
+        Rsvd_Var, // Reserved VAR
         EOL, // Fin de linea
         EOF, // Fin de archivo
         Unknown,
@@ -26,106 +25,129 @@ public class Tokenizer
         public TokenType Type;
     }
 
-    public enum State
-    {
-        None,
-        String
-    }
-    private State currentState = State.None;
-
-    private string currentString; 
+    private List<string> lines = new List<string>(); 
     private int idStart = 0;
     private int idEnd = 0;
+    private int currentLine = 0;
     private Token token = new Token();
 
     public void Start(string str)
     {
         Reset();
-        currentString = RemoveSpaces(str); // Changed!
+        
+        string[] lineArr = str.Split(new string[] {System.Environment.NewLine}, System.StringSplitOptions.None);
+        
+        lines.AddRange(lineArr);
     }
 
     public void Reset()
     {
-        currentString = null;
+        lines.Clear();
+        Rewind();
+    }
+
+    public void Rewind()
+    {
         idStart = 0;
         idEnd = 0;
+        currentLine = 0;
+    }
+
+    public int CurrentLine
+    {
+        get { return currentLine; }
     }
 
     public Token GetCurrentToken()
     {
         return token;
     }
-    
-    public Token GetNextToken()
-    {
-        idStart = idEnd;
 
-        if (string.IsNullOrEmpty(currentString))
+    public Token SkipToNextLine()
+    {
+        token.Lexeme = "";
+        
+        idStart = 0;
+        idEnd = 0;
+
+        currentLine++;
+
+        if (currentLine >= lines.Count)
         {
-            token.Lexeme = "";
-            token.Type = TokenType.Empty;
-        }
-        else if (idStart >= currentString.Length)
-        {
-            token.Lexeme = "";
             token.Type = TokenType.EOF;
         }
         else
         {
-            if (char.IsLetter(currentString[idStart]))
+            token.Type = TokenType.EOL;
+        }
+
+        return token;        
+    }
+
+    public Token GetNextToken()
+    {
+        idStart = idEnd;
+
+        if (lines.Count == 0)
+        {
+            token.Lexeme = "";
+            token.Type = TokenType.Empty;
+        }
+        else
+        {
+            string currentString = StringUtil.StripComments(lines[currentLine]).Trim();
+
+            // Skip whitespaces
+            while (idStart < currentString.Length && StringUtil.IsCharWhiteSpace(currentString[idStart]))
             {
-                token.Type = TokenType.Ident;
-                token.Lexeme = GetLexemeFromString(currentString);
+                idStart++;
             }
-            else if (char.IsDigit(currentString[idStart]))
+            
+            // Skip to next line of code
+            if (idStart >= currentString.Length)
             {
-                token.Type = TokenType.Number;
-                token.Lexeme = GetLexemeFromString(currentString);
-            }
-            else if (IsCarriageReturn(currentString[idStart]))
-            {
-                token.Lexeme = currentString[idStart].ToString();
-                token.Type = TokenType.EOL;
-                idEnd++;
-            }
-            else if (currentString[idStart] == ':') // Agregamos el : para numeros de linea
-            {
-                token.Lexeme = currentString[idStart].ToString();
-                token.Type = TokenType.Colon;
-                idEnd++;
-            }
-            else if (currentString[idStart] == '(')
-            {
-                token.Lexeme = currentString[idStart].ToString();
-                token.Type = TokenType.OpenParent;
-                idEnd++;
-            }
-            else if (currentString[idStart] == ')')
-            {
-                token.Lexeme = currentString[idStart].ToString();
-                token.Type = TokenType.CloseParent;
-                idEnd++;
-            }
-            else if (currentString[idStart] == ',')
-            {
-                token.Lexeme = currentString[idStart].ToString();
-                token.Type = TokenType.Comma;
-                idEnd++;
-            }
-            else if (currentString[idStart] == '"')
-            {
-                token.Lexeme = GetStringLiteralFromString(currentString);
-                token.Type = TokenType.String;
-                idEnd++;
+                SkipToNextLine();
             }
             else
             {
-                token.Lexeme = null;
-                token.Type = TokenType.Unknown;
-            }
-        }
+                if (StringUtil.IsCharNumeric(currentString[idStart]) || currentString[idStart] == '-')
+                {
+                    token.Type = TokenType.Number;
+                    token.Lexeme = GetLexemeFromString(currentString);
+                }
+                else if (StringUtil.IsCharIdent(currentString[idStart]))
+                {
+                    token.Type = TokenType.Ident;
+                    token.Lexeme = GetLexemeFromString(currentString);
 
-        //Debug.Log(token.Lexeme + " - " + token.Type);
+                    if (token.Lexeme.ToUpper() == "VAR")
+                        token.Type = TokenType.Rsvd_Var;
+                }
+                else if (currentString[idStart] == ':') 
+                {
+                    token.Lexeme = currentString[idStart].ToString();
+                    token.Type = TokenType.Colon;
+                    idEnd++;
+                }
+                else if (currentString[idStart] == ',')
+                {
+                    token.Lexeme = currentString[idStart].ToString();
+                    token.Type = TokenType.Comma;
+                    idEnd++;
+                }
+                else if (currentString[idStart] == '"')
+                {
+                    token.Lexeme = GetStringLiteralFromString(currentString);
+                    token.Type = TokenType.String;
+                    idEnd++;
+                }
+                else
+                {
+                    token.Lexeme = null;
+                    token.Type = TokenType.Unknown;
+                }
+            }
+        }        
 
         return token;
     }
@@ -140,7 +162,7 @@ public class Tokenizer
         {
             lexeme += str[idEnd++];
             
-            if (idEnd >= str.Length || IsSeparator(str[idEnd]))
+            if (idEnd >= str.Length || StringUtil.IsCharDelimiter(str[idEnd]))
             {
                 break;
             }
@@ -171,43 +193,4 @@ public class Tokenizer
         return lexeme;
     }
 
-    // El retorno de carro puede ser diferente en 
-    // cada sistema operativo
-    private bool IsCarriageReturn(char ch)
-    {
-        return ch == '\n' || ch == '\r' || ch == '\a';
-    } 
-
-    private bool IsSeparator(char ch)
-    {
-        return !char.IsLetterOrDigit(ch);
-    }
-
-    private string RemoveSpaces(string str)
-    {
-        bool isInsideString = false;
-        string finalString = "";
-        
-        for (int i = 0; i < str.Length; i++)
-        {
-            char ch = str[i];
-
-            if (isInsideString)
-            {
-                finalString += ch;
-                if (ch == '"')
-                    isInsideString = false;
-            }
-            else 
-            {
-                if (!char.IsWhiteSpace(ch) || ch == '\a' || ch == '\r' || ch == '\n')
-                    finalString += ch;
-                
-                if (ch == '"')
-                    isInsideString = true;
-            }
-        }
-
-        return finalString;
-    }
 }

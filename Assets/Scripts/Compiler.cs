@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.IO;
 
 public class Compiler 
 {
@@ -11,42 +12,37 @@ public class Compiler
 	{
 		parser = new Parser(tables);
 
-		tables.AddInstrLookUp("NOP", OpCodes.NOP);
-		tables.AddInstrLookUp("LOG", OpCodes.LOG);
-		tables.AddInstrLookUp("GOTO", OpCodes.GOTO);
+		tables.AddInstrLookUp("MOV", OpCodes.INSTR_MOV, 2);
+		tables.SetOpType("MOV", 0, 
+			OpFlags.MemIdx
+		);
+		tables.SetOpType("MOV", 1, 
+			OpFlags.Literal |
+			OpFlags.MemIdx
+		);
+
+		tables.AddInstrLookUp("JMP", OpCodes.INSTR_JMP, 1);
+		tables.SetOpType("JMP", 0, 
+			OpFlags.InstrIdx
+		);
 	}
 
-	public bool Compile(string str, out List<Instruction> instructions)
+	public Tables GetTables()
+	{
+		return tables;
+	}
+
+	public bool Compile(string str)
 	{
 		parser.Reset();
-
-
-		if (!parser.Parse(str, out instructions))
+		
+		if (!parser.Parse(str))
 		{
 			Debug.Log("Error while parsing...");
 			return false;		
 		}
 
-
-		foreach(Instruction i in instructions)
-		{
-			string dbg = i.OpCode + " ";
-
-			if (i.Arguments != null && i.Arguments.Count > 0)
-			{
-				foreach(string s in i.Arguments)
-				{
-					dbg += s + " ";
-				}
-			}
-
-			Debug.Log(dbg);
-		}
-
-
 		return true;
 	}
-
-
 
 }
