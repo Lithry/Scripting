@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class ErrorManager {
-	public void ErrorLog(string error){
-		Debug.Log(error);
-	}
+
+	virtual public void ParcerLogError(string error){}
+	virtual public void ByteCodeLogError(string error){}
 }

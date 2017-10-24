@@ -3,16 +3,28 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Runtime.InteropServices; // For aligning layouts
 
+// ==================================================
+// File format structs
+public static class HeaderConst
+{
+	public const string Magic = "ZS"; // For Zak Script
+	public const byte MajorVersion = 1; // Major version of my script
+	public const byte MinorVersion = 0; // Minor version
+}
+
+public struct Header
+{
+	public string Magic;
+	public byte MajorVersion;
+	public byte MinorVersion;
+	public int StackSize;
+	public int GlobalVarsSize;
+	public int PCStartIdx;
+	public int InstructionsCount;
+}
 
 // ==================================================
 // Compiler structs
-
-public static class FileFormat{
-	public const string magic = "STP5";
-	public const int magicLength = 4;
-	public const int upperVer = 1;
-	public const int lowerVer = 0;
-}
 public struct LabelDecl
 {
 	public int Idx;
@@ -36,6 +48,12 @@ public struct VarDecl
 
 // ==================================================
 // Runtime structs
+public struct InstrStream
+{
+	public Instruction[] Instructions;
+	public int PC;
+	public int StartPC;
+}
 
 public struct Instruction
 {
@@ -90,6 +108,18 @@ public struct Value
 	public string 	StringLiteral;
 }
 
+public struct RuntimeStack 
+{
+	public Value[] Elements;
+	public int StackStartIdx; // stack starts after global vars
+	public int TopStackIdx;
+}
+
+public class ScriptContext
+{
+	public RuntimeStack stack;
+	public InstrStream instrStream;
+}
 
 public class OpCodes
 {

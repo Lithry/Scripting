@@ -34,13 +34,14 @@ using UnityEngine;
 public class Parser 
 {
 	Tokenizer tokenizer = new Tokenizer();
-	ErrorManager errorManager = new ErrorManager();
 
 	Tables tables;
+	ErrorManager errorHandler;
 
-	public Parser(Tables tables)
+	public Parser(Tables tables, ErrorManager errorHandler)
 	{
 		this.tables = tables;
+		this.errorHandler = errorHandler;
 	}
 
 	public void Reset()
@@ -99,13 +100,13 @@ public class Parser
 				{
 					if (!tables.AddVar(currentToken.Lexeme))
 					{
-						// TODO: Log error var already exists
+						errorHandler.ParcerLogError("Var Already Exists");
 						return false;
 					}
 				}
 				else
 				{
-					// TODO: Log error ident expected
+					errorHandler.ParcerLogError("Ident Expected");
 					return false;
 				}
 
@@ -140,7 +141,7 @@ public class Parser
 			}
 			else
 			{
-				errorManager.ErrorLog("Unexpected Token");
+				errorHandler.ParcerLogError("Unexpected Token");
 				return false;
 			}
 		}
@@ -197,7 +198,7 @@ public class Parser
 
 					if (!tables.GetInstrLookUp(ident, out instr))
 					{
-						errorManager.ErrorLog("Syntax Error");
+						errorHandler.ParcerLogError("Syntax Error");
 						return false;
 					}
 
@@ -217,7 +218,7 @@ public class Parser
 							currentToken = tokenizer.GetNextToken();
 							if (currentToken.Type != Tokenizer.TokenType.Comma)
 							{
-								errorManager.ErrorLog("Comma Expected");
+								errorHandler.ParcerLogError("Comma Expected");
 								return false;
 							}
 							
@@ -237,7 +238,7 @@ public class Parser
 								
 								if (!tables.GetVarByIdent(currentToken.Lexeme, out varDecl))
 								{
-									errorManager.ErrorLog("Variable Doesn´t Exist");
+									errorHandler.ParcerLogError("Variable Doesn´t Exist");
 									return false;
 								}
 								currentInstruction.Values[i].Type = OpType.MemIdx;
@@ -249,7 +250,7 @@ public class Parser
 								
 								if (!tables.GetLabelByName(currentToken.Lexeme, out label))
 								{
-									errorManager.ErrorLog("Label Doesn´t Exist");
+									errorHandler.ParcerLogError("Label Doesn´t Exist");
 									return false;
 								}
 
@@ -267,7 +268,7 @@ public class Parser
 						{
 							if ((flags & OpFlags.Literal) == 0)
 							{	
-								errorManager.ErrorLog("Doesn´t Allow Literals");
+								errorHandler.ParcerLogError("Doesn´t Allow Literals");
 								return false;
 							}
 
@@ -283,7 +284,7 @@ public class Parser
 										currentInstruction.Values[i].FloatLiteral = val;
 									else
 									{
-										errorManager.ErrorLog("Error Parsing Float Value");
+										errorHandler.ParcerLogError("Error Parsing Float Value");
 										return false;
 									}
 								}
@@ -297,7 +298,7 @@ public class Parser
 										currentInstruction.Values[i].IntLiteral = val;
 									else
 									{
-										errorManager.ErrorLog("Error Parsing Int Value");
+										errorHandler.ParcerLogError("Error Parsing Int Value");
 										return false;
 									}
 								}
@@ -308,7 +309,7 @@ public class Parser
 								}
 								else 
 								{
-									errorManager.ErrorLog("Error Parsing Literal Value");
+									errorHandler.ParcerLogError("Error Parsing Literal Value");
 									return false;
 								}
 							}
@@ -320,7 +321,7 @@ public class Parser
 						}
 						else
 						{
-							errorManager.ErrorLog("Unexpected Token");
+							errorHandler.ParcerLogError("Unexpected Token");
 							return false;
 						}
 					}
@@ -334,7 +335,7 @@ public class Parser
 			}
 			else
 			{
-				errorManager.ErrorLog("Unexpected Token");
+				errorHandler.ParcerLogError("Unexpected Token");
 				return false;
 			}
 		}

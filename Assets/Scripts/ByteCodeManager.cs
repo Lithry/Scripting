@@ -1,9 +1,16 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 
 public class ByteCodeManager : MonoBehaviour {
+
+	private struct FileFormat{
+		public const string magic = "STP5";
+		public const int magicLength = 4;
+		public const int mayorVer = 1;
+		public const int minorVer = 0;
+	}
 
 	// Use this for initialization
 	void Start () {
@@ -19,15 +26,15 @@ public class ByteCodeManager : MonoBehaviour {
 		BinaryWriter writer = new BinaryWriter(File.Open("Assets/Resources/file.txt", FileMode.Create));
 
 		writer.Write(FileFormat.magic);
-		writer.Write(FileFormat.upperVer);
-		writer.Write(FileFormat.lowerVer);
+		writer.Write(FileFormat.mayorVer);
+		writer.Write(FileFormat.minorVer);
 	}
 
 	public void LoadFile(){
 		BinaryReader reader = new BinaryReader(File.Open("Assets/Resources/file.txt", FileMode.Open));
 
 		// Read Magic
-		reader.ReadChars(FileFormat.magicLength);
+		reader.ReadString();
 		
 		// Read Upper Ver
 		reader.ReadInt32();

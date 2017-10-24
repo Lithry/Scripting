@@ -9,11 +9,15 @@ public class CompileTest : MonoBehaviour
 	public Button compileButton;
 	public InputField inputField;
 
-	Compiler compiler = new Compiler();	
+	ErrorManager errorHandler;
+	Compiler compiler;
+	Script script;
 
 	// Use this for initialization
 	void Awake () 
 	{
+		errorHandler = new MyGameError();
+		compiler = new Compiler(errorHandler);
 		compileButton.onClick.AddListener(OnClick);	
 	}
 
@@ -21,7 +25,20 @@ public class CompileTest : MonoBehaviour
 	{
 		if (compiler.Compile(inputField.text))
 		{
-			// TODO: Convert to bytecode and create Script
+			MemoryStream ms = ByteCode.SaveToMemory(compiler.GetTables());
+			
+			ScriptContext context;
+
+			if (ByteCode.Load(ms, out context, errorHandler))
+			{
+				script = new Script(context);
+			}
 		}
+	}
+
+	void Update()
+	{
+		if (script != null)
+			script.RunStep();
 	}
 }
