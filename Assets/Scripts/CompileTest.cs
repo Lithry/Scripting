@@ -31,7 +31,8 @@ public class CompileTest : MonoBehaviour
 
 			if (ByteCode.Load(ms, out context, errorHandler))
 			{
-				script = new Script(context);
+				script = new Script(context, errorHandler);
+				script.Start();
 			}
 		}
 	}

@@ -35,7 +35,7 @@ public class Tokenizer
     {
         Reset();
         
-        string[] lineArr = str.Split(new string[] {System.Environment.NewLine}, System.StringSplitOptions.None);
+        string[] lineArr = str.Split(new string[] {System.Environment.NewLine, "\n"}, System.StringSplitOptions.None);
         
         lines.AddRange(lineArr);
     }

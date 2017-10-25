@@ -4,46 +4,52 @@ using UnityEngine;
 using System.IO;
 
 
-public class Script 
-{
-	enum State
-	{
+public class Script{
+	enum State{
 		None,
 		Running,
 		Pause,
 	}
+
 	private delegate void InstrDlg(Value[] values);
 
 	ScriptContext context;
+	ErrorManager errorHandler;
 
 	InstrDlg[] instrExec = new InstrDlg[OpCodes.COUNT];
 	State state = State.None;
 
-	public Script()
-	{
+	public Script(){
+		errorHandler = null;
 		SetInstrDlg();
 	}
 
-	public Script(ScriptContext context) 
-	{
+	public Script(ScriptContext context){
 		this.context = context;
+		errorHandler = null;
 		SetInstrDlg();
 	}
 
-	private void SetInstrDlg()
-	{
+	public Script(ScriptContext context, ErrorManager errorHandler){
+		this.context = context;
+		this.errorHandler = errorHandler;
+		SetInstrDlg();
+	}
+
+	private void SetInstrDlg(){
 		instrExec[OpCodes.INSTR_MOV] = InstrMov;
 		instrExec[OpCodes.INSTR_ADD] = InstrAdd;
 		instrExec[OpCodes.INSTR_EXIT] = InstrExit;
+		instrExec[OpCodes.INSTR_JMP] = InstrJmp;
 		instrExec[OpCodes.INSTR_JE] = InstrJe;
 		instrExec[OpCodes.INSTR_PAUSE] = InstrPause;
 		instrExec[OpCodes.INSTR_POP] = InstrPop;
 		instrExec[OpCodes.INSTR_PUSH] = InstrPush;
+		instrExec[OpCodes.INSTR_SUB] = InstrSub;
 		
 	}
 
-	public void RunStep()
-	{
+	public void RunStep(){
 		if (state == State.Running)
 		{
 			if (context.instrStream.Instructions == null)
@@ -65,28 +71,24 @@ public class Script
 		}
 	}
 
-	void ResetContext()
-	{
+	void ResetContext(){
 		context.instrStream.PC = context.instrStream.StartPC;
 		context.stack.TopStackIdx = 0;
 	}
 
-	public void Start()
-	{
+	public void Start(){
 		if (state == State.Running)
 			ResetContext();
 			
 		state = State.Running;
 	}
 
-	public void Stop()
-	{
+	public void Stop(){
 		state = State.None;
 		ResetContext();
 	}
 
-	public void Pause(bool pause)
-	{
+	public void Pause(bool pause){
 		if (pause)
 		{
 			state = State.Pause;
@@ -129,7 +131,7 @@ public class Script
 				if (val2.Type == OpType.Int)
 					val1.FloatLiteral += (float)val2.IntLiteral;
 				else if (val2.Type == OpType.Float)
-					val1.FloatLiteral += (float)val2.FloatLiteral;
+					val1.FloatLiteral += val2.FloatLiteral;
 				else if (val2.Type == OpType.String)
 				{
 					val1.Type = OpType.String;
@@ -137,15 +139,53 @@ public class Script
 				}
 			break;
 			case OpType.String:
-				val1.StringLiteral = val1.FloatLiteral + val2.StringLiteral;
+				if (val2.Type == OpType.Int)
+					val1.StringLiteral = val1.StringLiteral + val2.IntLiteral;
+				else if (val2.Type == OpType.Float)
+					val1.StringLiteral = val1.StringLiteral + val2.FloatLiteral;
+				else if (val2.Type == OpType.String)
+					val1.StringLiteral = val1.StringLiteral + val2.StringLiteral;
 			break;
 		}
 		
 		ResolveOpValueAndSet(0, val1);
 	}
 
-	private void InstrJe(Value[] values)
+	private void InstrSub(Value[] values)
 	{
+		Value val1 = ResolveOpValue(values[0]);
+		Value val2 = ResolveOpValue(values[1]);
+
+		switch(val1.Type)
+		{
+			case OpType.Int:
+				if (val2.Type == OpType.Int)
+					val1.IntLiteral -= val2.IntLiteral;
+				else if (val2.Type == OpType.Float)
+				{
+					val1.Type = OpType.Float;
+					val1.FloatLiteral = (float)val1.IntLiteral - val2.FloatLiteral;
+				}
+			break;
+			case OpType.Float:
+				if (val2.Type == OpType.Int)
+					val1.FloatLiteral -= (float)val2.IntLiteral;
+				else if (val2.Type == OpType.Float)
+					val1.FloatLiteral -= val2.FloatLiteral;
+			break;
+			case OpType.String:
+			break;
+		}
+		
+		ResolveOpValueAndSet(0, val1);
+	}
+
+	private void InstrJmp(Value[] values){
+		Value val1 = ResolveOpValue(values[0]);
+		context.instrStream.PC = val1.IntLiteral - 1;
+	}
+
+	private void InstrJe(Value[] values){
 		Value val1 = ResolveOpValue(values[0]);
 		Value val2 = ResolveOpValue(values[1]);
 		Value val3 = ResolveOpValue(values[2]);
@@ -181,28 +221,24 @@ public class Script
 		}
 
 		if (shouldJump)
-			context.instrStream.PC = val1.IntLiteral;
+			context.instrStream.PC = val1.IntLiteral - 1;
 	}
 
-	private void InstrPush(Value[] values)
-	{
+	private void InstrPush(Value[] values){
 		Value val = ResolveOpValue(values[0]);
 		Push(val);
 	}
 
-	private void InstrPop(Value[] values)
-	{
+	private void InstrPop(Value[] values){
 		Value val = Pop();
 		ResolveOpValueAndSet(0, val);
 	}
 
-	private void InstrExit(Value[] values)
-	{
+	private void InstrExit(Value[] values){
 		Stop();
 	}
 
-	private void InstrPause(Value[] values)
-	{
+	private void InstrPause(Value[] values){
 		Value val = ResolveOpValue(values[0]);
 
 		Pause(val.IntLiteral > 0);
@@ -210,50 +246,44 @@ public class Script
 
 #endregion 
 
-	private void Push(Value val)
-	{
+	private void Push(Value val){
 		int start = context.stack.StackStartIdx;
 		int top = context.stack.TopStackIdx;
 		int idx = start + top;
 
-		if (idx < context.stack.Elements.Length)
-		{
+		if (idx < context.stack.Elements.Length){
 			context.stack.Elements[idx] = val;
 			context.stack.TopStackIdx++;
 		}
-		else
-		{
-			// TODO: Log stack overflow error!
+		else{
+			if (errorHandler != null)
+				errorHandler.RunTimeLogError("Stack Overflow");
 		}
 	}
 
-	private Value Pop()
-	{
+	private Value Pop(){
 		int start = context.stack.StackStartIdx;
 		int top = context.stack.TopStackIdx;
 		int idx = top - 1;
 		
 		Value val; 
 
-		if (idx >= start)
-		{
+		if (idx >= start){
 			val = context.stack.Elements[idx];
 			context.stack.TopStackIdx--;
 		}
-		else
-		{
+		else{
 			val = new Value();
 
-			// TODO: Log stack overflow error!
+			if (errorHandler != null)
+				errorHandler.RunTimeLogError("Stack Overflow");
 		}
 
 		return val;
 	}
 
-	private Value ResolveOpValue(Value val)
-	{
-		switch(val.Type)
-		{
+	private Value ResolveOpValue(Value val){
+		switch(val.Type){
 			case OpType.MemIdx:
 				return context.stack.Elements[val.IntLiteral];
 
@@ -262,13 +292,11 @@ public class Script
 		}
 	}
 
-	private void ResolveOpValueAndSet(int idx, Value val)
-	{
+	private void ResolveOpValueAndSet(int idx, Value val){
 		context.stack.Elements[GetOpValue(idx).IntLiteral] = val;
 	}
 
-	private Value GetOpValue(int idx)
-	{
+	private Value GetOpValue(int idx){
 		return context.instrStream.Instructions[context.instrStream.PC].Values[idx];
 	}
 }

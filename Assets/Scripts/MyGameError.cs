@@ -11,5 +11,9 @@ public class MyGameError : ErrorManager {
 	override public void ByteCodeLogError(string error){
 		Debug.Log("[ByteCode] - " + error);
 	}
+	
+	override public void RunTimeLogError(string error){
+		Debug.Log("[RunTime] - " + error);
+	}
 
 }

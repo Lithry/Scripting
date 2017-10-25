@@ -3,14 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 
-public class Compiler 
-{
+public class Compiler{
 	Tables tables = new Tables();
 	Parser parser;
 	ErrorManager errorHandler;
 
-	public Compiler(ErrorManager errorHandler)
-	{
+	public Compiler(ErrorManager errorHandler){
 		this.errorHandler = errorHandler;
 		parser = new Parser(tables, errorHandler);
 
@@ -32,6 +30,19 @@ public class Compiler
 			OpFlags.MemIdx
 		);
 
+		tables.AddInstrLookUp("SUB", OpCodes.INSTR_SUB, 2);
+		tables.SetOpType("SUB", 0, 
+			OpFlags.MemIdx
+		);
+		tables.SetOpType("SUB", 1, 
+			OpFlags.Literal |
+			OpFlags.MemIdx
+		);
+
+		tables.AddInstrLookUp("JMP", OpCodes.INSTR_JMP, 1);
+		tables.SetOpType("JMP", 0, 
+			OpFlags.InstrIdx
+		);
 
 		tables.AddInstrLookUp("JE", OpCodes.INSTR_JE, 3);
 		tables.SetOpType("JE", 0, 
@@ -67,18 +78,14 @@ public class Compiler
 
 	}
 
-	public Tables GetTables()
-	{
+	public Tables GetTables(){
 		return tables;
 	}
 
-	public bool Compile(string str)
-	{
+	public bool Compile(string str){
 		parser.Reset();
 		
-		if (!parser.Parse(str))
-		{
-			//Debug.Log("Error while parsing...");
+		if (!parser.Parse(str)){
 			return false;		
 		}
 
