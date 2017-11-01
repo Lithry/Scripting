@@ -36,6 +36,15 @@ public class Script{
 		SetInstrDlg();
 	}
 
+	public void HostAPIFunctionRegister(HostFuncsDlg func){
+		HostFuncs newFunc;
+		
+		newFunc.ident = func.Method.Name.ToUpper();
+		newFunc.func = func;
+		
+		context.hostFuncs.Add(newFunc);
+	}
+
 	private void SetInstrDlg(){
 		instrExec[OpCodes.INSTR_MOV] = InstrMov;
 		instrExec[OpCodes.INSTR_ADD] = InstrAdd;
@@ -46,6 +55,7 @@ public class Script{
 		instrExec[OpCodes.INSTR_POP] = InstrPop;
 		instrExec[OpCodes.INSTR_PUSH] = InstrPush;
 		instrExec[OpCodes.INSTR_SUB] = InstrSub;
+		instrExec[OpCodes.INSTR_CALLHOST] = CallHost;
 		
 	}
 
@@ -263,7 +273,7 @@ public class Script{
 
 	private Value Pop(){
 		int start = context.stack.StackStartIdx;
-		int top = context.stack.TopStackIdx;
+		int top = start + context.stack.TopStackIdx;
 		int idx = top - 1;
 		
 		Value val; 
@@ -298,5 +308,58 @@ public class Script{
 
 	private Value GetOpValue(int idx){
 		return context.instrStream.Instructions[context.instrStream.PC].Values[idx];
+	}
+
+	private void CallHost(Value[] values){
+		Value[] args = values;
+		switch(values[0].Type){
+			
+			case OpType.HostAPICallString:
+				values[0].StringLiteral = values[0].StringLiteral.ToUpper();
+				
+				if (values[1].Type == OpType.Int){
+					
+					for (int i = 0; i < context.hostFuncs.Count; i++){
+						
+						if (context.hostFuncs[i].ident == values[0].StringLiteral){
+							
+							values[0].IntLiteral = i;
+							values[0].Type = OpType.HostAPICallIdx;
+							
+							context.instrStream.Instructions[context.instrStream.PC].Values[0] = values[0];
+
+							if (values[1].IntLiteral > 0){
+								args = new Value[values[1].IntLiteral];
+							
+								for (int j = 0; j < values[1].IntLiteral; j++){
+									args[j] = Pop();
+								}
+							}
+
+							context.hostFuncs[values[0].HostAPICallIndex].func(args);
+							break;
+						}
+					}
+				}
+				else{
+					errorHandler.RunTimeLogError("Unexpected Parameter for Function");
+				}
+				break;
+			case OpType.HostAPICallIdx:
+				if (values[1].Type == OpType.Int){
+					if (values[1].IntLiteral > 0){
+						
+						args = new Value[values[1].IntLiteral];
+						
+						for (int i = 0; i < values[1].IntLiteral; i++){
+							args[i] = Pop();
+						}
+					}
+
+					context.hostFuncs[values[0].HostAPICallIndex].func(args);
+				}
+
+				break;
+		}
 	}
 }

@@ -80,6 +80,7 @@ public enum OpType
 	String, 
 	MemIdx,
 	InstrIdx, 
+	HostAPICallString,
 	HostAPICallIdx,
 }
 
@@ -115,10 +116,19 @@ public struct RuntimeStack
 	public int TopStackIdx;
 }
 
+public delegate void HostFuncsDlg(Value[] values);
+
+public struct HostFuncs{
+	public string ident;
+	public HostFuncsDlg func;
+
+}
+
 public class ScriptContext
 {
 	public RuntimeStack stack;
 	public InstrStream instrStream;
+	public List<HostFuncs> hostFuncs;
 }
 
 public class OpCodes

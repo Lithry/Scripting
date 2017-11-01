@@ -32,6 +32,7 @@ public class CompileTest : MonoBehaviour
 			if (ByteCode.Load(ms, out context, errorHandler))
 			{
 				script = new Script(context, errorHandler);
+				script.HostAPIFunctionRegister(Log);
 				script.Start();
 			}
 		}
@@ -41,5 +42,23 @@ public class CompileTest : MonoBehaviour
 	{
 		if (script != null)
 			script.RunStep();
+	}
+
+
+	private void Log(Value[] args){
+		for (int i = 0; i < args.Length; i++){
+			switch(args[i].Type){
+				case OpType.Int:
+					Debug.Log(args[i].IntLiteral + "\n");
+				break;
+				case OpType.Float:
+					Debug.Log(args[i].FloatLiteral + "\n");
+				break;
+				case OpType.String:
+					Debug.Log(args[i].StringLiteral + "\n");
+				break;
+			}
+			
+		}
 	}
 }

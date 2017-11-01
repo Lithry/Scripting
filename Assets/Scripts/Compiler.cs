@@ -76,6 +76,13 @@ public class Compiler{
 			OpFlags.Literal 
 		);
 
+		tables.AddInstrLookUp("CLH", OpCodes.INSTR_CALLHOST, 2);
+		tables.SetOpType("CLH", 0, 
+			OpFlags.HostAPICallIdx
+		);
+		tables.SetOpType("CLH", 1, 
+			OpFlags.Literal
+		);
 	}
 
 	public Tables GetTables(){

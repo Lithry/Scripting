@@ -72,6 +72,7 @@ public class ByteCode
 							bw.Write(v.FloatLiteral);
 						break;
 						case OpType.String:
+						case OpType.HostAPICallString:
 							bw.Write(v.StringLiteral);
 						break;
 					}
@@ -109,7 +110,8 @@ public class ByteCode
 	public static bool Load(Stream s, out ScriptContext context, ErrorManager errorHandler)
 	{
 		context = new ScriptContext();
-
+		context.hostFuncs = new List<HostFuncs>();
+		
 		s.Seek(0, SeekOrigin.Begin);
 
 		BinaryReader br = new BinaryReader(s);
@@ -172,6 +174,7 @@ public class ByteCode
 							inst.Values[j].FloatLiteral = br.ReadSingle();
 						break;
 						case OpType.String:
+						case OpType.HostAPICallString:
 							inst.Values[j].StringLiteral = br.ReadString();
 						break;
 					}

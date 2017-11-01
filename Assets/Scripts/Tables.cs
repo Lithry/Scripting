@@ -50,7 +50,7 @@ public class Tables
 
 		return false;
 	}
-
+	
 	public bool AddVar(string ident)
 	{
 		VarDecl var;

@@ -259,6 +259,8 @@ public class Parser
 							}
 							else if ((flags & OpFlags.HostAPICallIdx) != 0)
 							{
+								currentInstruction.Values[i].Type = OpType.HostAPICallString;
+								currentInstruction.Values[i].StringLiteral = currentToken.Lexeme;
 								// TODO: host api calls
 							}
 						}
