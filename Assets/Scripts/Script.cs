@@ -56,6 +56,10 @@ public class Script{
 		instrExec[OpCodes.INSTR_PUSH] = InstrPush;
 		instrExec[OpCodes.INSTR_SUB] = InstrSub;
 		instrExec[OpCodes.INSTR_CALLHOST] = CallHost;
+		instrExec[OpCodes.INSTR_MUL] = InstrMul;
+		instrExec[OpCodes.INSTR_DIV] = InstrDiv;
+
+		instrExec[OpCodes.INSTR_EXP] = InstrExp;
 		
 	}
 
@@ -182,6 +186,158 @@ public class Script{
 					val1.FloatLiteral -= (float)val2.IntLiteral;
 				else if (val2.Type == OpType.Float)
 					val1.FloatLiteral -= val2.FloatLiteral;
+			break;
+			case OpType.String:
+			break;
+		}
+		
+		ResolveOpValueAndSet(0, val1);
+	}
+	
+	private void InstrMul(Value[] values)
+	{
+		Value val1 = ResolveOpValue(values[0]);
+		Value val2 = ResolveOpValue(values[1]);
+
+		switch(val1.Type)
+		{
+			case OpType.Int:
+				if (val2.Type == OpType.Int)
+					val1.IntLiteral *= val2.IntLiteral;
+				else if (val2.Type == OpType.Float)
+				{
+					val1.Type = OpType.Float;
+					val1.FloatLiteral = (float)val1.IntLiteral * val2.FloatLiteral;
+				}
+			break;
+			case OpType.Float:
+				if (val2.Type == OpType.Int)
+					val1.FloatLiteral *= (float)val2.IntLiteral;
+				else if (val2.Type == OpType.Float)
+					val1.FloatLiteral *= val2.FloatLiteral;
+			break;
+			case OpType.String:
+			break;
+		}
+		
+		ResolveOpValueAndSet(0, val1);
+	}
+
+	private void InstrDiv(Value[] values)
+	{
+		Value val1 = ResolveOpValue(values[0]);
+		Value val2 = ResolveOpValue(values[1]);
+
+		switch(val1.Type)
+		{
+			case OpType.Int:
+				val1.Type = OpType.Float;
+				val1.FloatLiteral = (float)val1.IntLiteral;
+				if (val2.Type == OpType.Int)
+					if (val2.IntLiteral == 0){
+						val1.Type = OpType.String;
+						val1.StringLiteral = "ERROR | division by 0";
+					}
+					else
+						val1.FloatLiteral /= (float)val2.IntLiteral;
+				else if (val2.Type == OpType.Float)
+				{
+					if (val2.FloatLiteral == 0.0f){
+						val1.Type = OpType.String;
+						val1.StringLiteral = "ERROR | division by 0";
+					}
+					else
+						val1.FloatLiteral /= val2.FloatLiteral;
+				}
+			break;
+			case OpType.Float:
+				if (val2.Type == OpType.Int)
+					if (val2.IntLiteral == 0){
+						val1.Type = OpType.String;
+						val1.StringLiteral = "ERROR | division by 0";
+					}
+					else
+						val1.FloatLiteral /= (float)val2.IntLiteral;
+				else if (val2.Type == OpType.Float)
+					if (val2.FloatLiteral == 0.0f){
+						val1.Type = OpType.String;
+						val1.StringLiteral = "ERROR | division by 0";
+					}
+					else
+						val1.FloatLiteral /= val2.FloatLiteral;
+			break;
+			case OpType.String:
+			break;
+		}
+		
+		ResolveOpValueAndSet(0, val1);
+	}
+
+	private void InstrExp(Value[] values)
+	{
+		Value val1 = ResolveOpValue(values[0]);
+		Value val2 = ResolveOpValue(values[1]);
+
+		switch(val1.Type)
+		{
+			case OpType.Int:
+				int expInt = val1.IntLiteral;
+				if (val2.Type == OpType.Int)
+					if (val2.IntLiteral == 0){
+						val1.IntLiteral = 1;
+					}
+					else if (val2.IntLiteral < 0){
+
+					}
+					else{
+						for (int i = 0; i < val2.IntLiteral - 1; i++){
+							val1.IntLiteral *= expInt;
+						}
+					}
+				else if (val2.Type == OpType.Float)
+				{
+					if ((int)val2.FloatLiteral == 0){
+						val1.IntLiteral = 1;
+					}
+					else if ((int)val2.FloatLiteral < 0){
+
+					}
+					else{
+						for (int i = 0; i < (int)val2.FloatLiteral - 1; i++){
+							val1.IntLiteral *= expInt;
+						}
+					}
+				}
+			break;
+			case OpType.Float:
+				float expFloat = val1.FloatLiteral;
+				if (val2.Type == OpType.Int)
+					if (val2.IntLiteral == 0){
+						val1.FloatLiteral = 1.0f;
+					}
+					else if (val2.IntLiteral < 0){
+					
+					}
+					else{
+						for (int i = 0; i < val2.IntLiteral - 1; i++){
+							val1.FloatLiteral *= expFloat;
+						}
+					}
+				else if (val2.Type == OpType.Float){
+
+				
+					if ((int)val2.FloatLiteral == 0){
+						val1.FloatLiteral = 1.0f;
+					}
+					else if ((int)val2.FloatLiteral < 0){
+					
+					}
+					else{
+						for (int i = 0; i < (int)val2.FloatLiteral - 1; i++){
+							val1.FloatLiteral *= expFloat;
+						}
+					}
+				}
 			break;
 			case OpType.String:
 			break;

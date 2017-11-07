@@ -38,6 +38,33 @@ public class Compiler{
 			OpFlags.Literal |
 			OpFlags.MemIdx
 		);
+		
+		tables.AddInstrLookUp("MUL", OpCodes.INSTR_MUL, 2);
+		tables.SetOpType("MUL", 0, 
+			OpFlags.MemIdx
+		);
+		tables.SetOpType("MUL", 1, 
+			OpFlags.Literal |
+			OpFlags.MemIdx
+		);
+
+		tables.AddInstrLookUp("DIV", OpCodes.INSTR_DIV, 2);
+		tables.SetOpType("DIV", 0, 
+			OpFlags.MemIdx
+		);
+		tables.SetOpType("DIV", 1, 
+			OpFlags.Literal |
+			OpFlags.MemIdx
+		);
+
+		tables.AddInstrLookUp("EXP", OpCodes.INSTR_EXP, 2);
+		tables.SetOpType("EXP", 0, 
+			OpFlags.MemIdx
+		);
+		tables.SetOpType("EXP", 1, 
+			OpFlags.Literal |
+			OpFlags.MemIdx
+		);
 
 		tables.AddInstrLookUp("JMP", OpCodes.INSTR_JMP, 1);
 		tables.SetOpType("JMP", 0, 
