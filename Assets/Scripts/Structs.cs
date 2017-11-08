@@ -46,6 +46,12 @@ public struct VarDecl
 	// TODO: add func id
 }
 
+public struct FuncDecl
+{
+	public string Ident;
+	public int StartIdx;
+}
+
 // ==================================================
 // Runtime structs
 public struct InstrStream
@@ -70,6 +76,7 @@ public static class OpFlags
 	public const int MemIdx 		= 2;
 	public const int InstrIdx 		= 4; 
 	public const int HostAPICallIdx	= 8;
+	public const int FuncIdx = 16;
 }
 
 public enum OpType
@@ -82,6 +89,7 @@ public enum OpType
 	InstrIdx, 
 	HostAPICallString,
 	HostAPICallIdx,
+	FuncIdx,
 }
 
 
@@ -104,6 +112,8 @@ public struct Value
 	public int		InstrIndex;
 	[FieldOffset(4)]
 	public int		HostAPICallIndex;
+	[FieldOffset(4)]
+	public int		FunctionIndex;
 
 	[FieldOffset(8)]
 	public string 	StringLiteral;
@@ -124,11 +134,21 @@ public struct HostFuncs{
 
 }
 
+public struct Function{
+	public int StartIdx;
+}
+
+public struct CallStack{
+	public int ReturnIdx;
+}
+
 public class ScriptContext
 {
 	public RuntimeStack stack;
 	public InstrStream instrStream;
 	public List<HostFuncs> hostFuncs;
+	public List<Function> Funcs;
+	public Stack<CallStack> CallStack;
 }
 
 public class OpCodes

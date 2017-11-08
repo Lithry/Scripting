@@ -60,6 +60,8 @@ public class Script{
 		instrExec[OpCodes.INSTR_DIV] = InstrDiv;
 
 		instrExec[OpCodes.INSTR_EXP] = InstrExp;
+		instrExec[OpCodes.INSTR_JSR] = InstrJsr;
+		instrExec[OpCodes.INSTR_RET] = InstrRet;
 		
 	}
 
@@ -446,6 +448,19 @@ public class Script{
 		}
 
 		return val;
+	}
+
+	private void InstrJsr(Value[] values){
+		Value val = ResolveOpValue(values[0]);
+		CallStack ret = new CallStack();
+		ret.ReturnIdx = context.instrStream.PC;
+		context.CallStack.Push(ret);
+		int instIdx = context.Funcs[val.IntLiteral].StartIdx;
+		context.instrStream.PC = instIdx;
+	}
+
+	private void InstrRet(Value[] values){
+		context.instrStream.PC = context.CallStack.Pop().ReturnIdx;
 	}
 
 	private Value ResolveOpValue(Value val){

@@ -110,6 +110,13 @@ public class Compiler{
 		tables.SetOpType("CLH", 1, 
 			OpFlags.Literal
 		);
+
+		tables.AddInstrLookUp("JSR", OpCodes.INSTR_JSR, 1);
+		tables.SetOpType("JSR", 0, 
+			OpFlags.FuncIdx
+		);
+
+		tables.AddInstrLookUp("RET", OpCodes.INSTR_RET, 0);
 	}
 
 	public Tables GetTables(){

@@ -37,6 +37,7 @@ public class Parser
 
 	Tables tables;
 	ErrorManager errorHandler;
+	int scope = -1;
 
 	public Parser(Tables tables, ErrorManager errorHandler)
 	{
@@ -47,6 +48,7 @@ public class Parser
 	public void Reset()
 	{
 		tables.Clear();
+		scope = -1;
 	}
 
 	public bool Parse(string str)
@@ -113,6 +115,39 @@ public class Parser
 				currentToken = tokenizer.GetNextToken();
 			}
 			// ===================================================================
+			// Parse functions
+			else if (currentToken.Type == Tokenizer.TokenType.Rsvd_Func)
+			{
+				if (scope != -1)
+				{
+					errorHandler.ParcerLogError("Declaring Functions in Functions is Illegal");
+					return false;
+				}
+				
+				currentToken = tokenizer.GetNextToken();
+				
+				if (currentToken.Type == Tokenizer.TokenType.Ident)
+				{
+					if (!tables.AddFunc(currentToken.Lexeme, instrIdx, out scope))
+					{
+						errorHandler.ParcerLogError("Function Already Exists");
+						return false;
+					}
+				}
+				else
+				{
+					errorHandler.ParcerLogError("Ident Expected");
+					return false;
+				}
+
+				currentToken = tokenizer.GetNextToken();
+			}
+			else if (currentToken.Type == Tokenizer.TokenType.Rsvd_EndFunc)
+			{
+				scope = -1;
+				currentToken = tokenizer.GetNextToken();
+			}
+			// ===================================================================
 			// Parse instructions and labels			
 			else if (currentToken.Type == Tokenizer.TokenType.Ident)
 			{
@@ -132,10 +167,14 @@ public class Parser
 				// It's an instruction
 				else
 				{
+					if (scope == -1 && tables.GetStartPC() == -1)
+						tables.SetStartPC(instrIdx);
+
 					instrIdx++; // Increment counter
 
 					// Skip to next line
-					currentToken = tokenizer.SkipToNextLine();
+					if (currentToken.Type != Tokenizer.TokenType.EOL)
+						currentToken = tokenizer.SkipToNextLine();
 				}
 
 			}
@@ -175,6 +214,16 @@ public class Parser
 				currentToken = tokenizer.GetNextToken(); // Skip the VAR reserved word
 				
 				currentToken = tokenizer.GetNextToken(); // Skip VAR's identifier
+			}
+			else if (currentToken.Type == Tokenizer.TokenType.Rsvd_Func)
+			{
+				currentToken = tokenizer.GetNextToken(); // Skip the FUNC reserved word
+
+				currentToken = tokenizer.GetNextToken(); // Skip FUNC`s identifier
+			}
+			else if (currentToken.Type == Tokenizer.TokenType.Rsvd_EndFunc)
+			{
+				currentToken = tokenizer.GetNextToken(); // Skip the ENDFUNC reserved word
 			}
 			// ===================================================================
 			// Parse instructions and labels			

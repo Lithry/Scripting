@@ -58,7 +58,6 @@ public class CompileTest : MonoBehaviour
 					Debug.Log(args[i].StringLiteral + "\n");
 				break;
 			}
-			
 		}
 	}
 }

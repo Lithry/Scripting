@@ -34,7 +34,7 @@ public class ByteCode
 		header.MinorVersion = HeaderConst.MinorVersion;
 
 		header.InstructionsCount = tables.GetInstrStream().Count;
-		header.PCStartIdx = 0;
+		header.PCStartIdx = tables.GetStartPC();
 		header.StackSize = 1024;
 		
 		header.GlobalVarsSize = tables.GetVarsTable().Count;
@@ -66,6 +66,7 @@ public class ByteCode
 						case OpType.Int:
 						case OpType.MemIdx:
 						case OpType.InstrIdx:
+						case OpType.FuncIdx:
 							bw.Write(v.IntLiteral);
 						break;
 						case OpType.Float:
@@ -82,6 +83,10 @@ public class ByteCode
 			{
 				bw.Write(0);
 			}
+		}
+		bw.Write(tables.GetFunctions().Count);
+		for (int i = 0; i < tables.GetFunctions().Count; i++){
+			bw.Write(tables.GetFunctions()[i].StartIdx);
 		}
 		
 		bw.Flush();
@@ -168,6 +173,7 @@ public class ByteCode
 						case OpType.Int:
 						case OpType.MemIdx:
 						case OpType.InstrIdx:
+						case OpType.FuncIdx:
 							inst.Values[j].IntLiteral = br.ReadInt32();
 						break;
 						case OpType.Float:
@@ -182,6 +188,14 @@ public class ByteCode
 			}
 
 			context.instrStream.Instructions[i] = inst;
+		}
+
+		int count = br.ReadInt32();
+		context.Funcs = new List<Function>();
+		Function newFunc = new Function();
+		for (int i = 0; i < count; i++){
+			newFunc.StartIdx = br.ReadInt32();
+			context.Funcs.Add(newFunc);
 		}
 
 		br.Close();

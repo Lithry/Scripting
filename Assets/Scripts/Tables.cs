@@ -8,14 +8,17 @@ public class Tables
 	List<LabelDecl> labelsTable = new List<LabelDecl>();
 	Dictionary<string, InstrDecl> instrLookUp = new Dictionary<string, InstrDecl>();
 	List<VarDecl> varsTable = new List<VarDecl>();
+	List<FuncDecl> funcTable = new List<FuncDecl>();
 	List<Instruction> instrStream = new List<Instruction>();
-
+	int startPC;
 
 	public void Clear()
 	{
 		instrStream.Clear();
 		labelsTable.Clear();
 		varsTable.Clear();
+		funcTable.Clear();
+		startPC = -1;
 	}
 
 	public bool AddLabel(string ident, int idx)
@@ -65,7 +68,7 @@ public class Tables
 
 		varsTable.Add(var);
 
-		return true; 
+		return true;
 	}
 	
 	public bool GetVarByIdent(string ident, out VarDecl varDecl)
@@ -89,6 +92,39 @@ public class Tables
 		return varsTable;
 	}
 
+	public bool AddFunc(string ident, int idx, out int scope){
+		scope = -1;
+		FuncDecl func;
+
+		if (GetFuncByIdent(ident, out func))
+			return false;
+
+		func = new FuncDecl();
+
+		func.Ident = ident;
+		func.StartIdx = idx;
+
+		funcTable.Add(func);
+		scope = funcTable.Count - 1;
+
+		return true;
+	}
+
+	public bool GetFuncByIdent(string ident, out FuncDecl funcDecl){
+		for(int i = 0; i < funcTable.Count; i++)
+		{
+			if (funcTable[i].Ident == ident)
+			{
+				funcDecl = funcTable[i];
+				return true;
+			}	
+		}
+
+		funcDecl = new FuncDecl();
+
+		return false;
+	}
+
 	public bool AddInstrToStream(Instruction instruction)
 	{
 		instrStream.Add(instruction);
@@ -99,6 +135,10 @@ public class Tables
 	public List<Instruction> GetInstrStream()
 	{
 		return instrStream;
+	}
+
+	public List<FuncDecl> GetFunctions(){
+		return funcTable;
 	}
 
 	public bool AddInstrLookUp(string instruction, int opcode, int argsCount)
@@ -153,5 +193,13 @@ public class Tables
 		instrLookUp[instruction] = instrDecl;
 		
 		return true;
+	}
+
+	public int GetStartPC(){
+		return startPC;
+	}
+
+	public void SetStartPC(int PC){
+		startPC = PC;
 	}
 }
