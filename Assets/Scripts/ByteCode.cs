@@ -116,6 +116,7 @@ public class ByteCode
 	{
 		context = new ScriptContext();
 		context.hostFuncs = new List<HostFuncs>();
+		context.CallStack = new Stack<CallStack>();
 		
 		s.Seek(0, SeekOrigin.Begin);
 

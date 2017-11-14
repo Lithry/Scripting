@@ -455,7 +455,7 @@ public class Script{
 		CallStack ret = new CallStack();
 		ret.ReturnIdx = context.instrStream.PC;
 		context.CallStack.Push(ret);
-		int instIdx = context.Funcs[val.IntLiteral].StartIdx;
+		int instIdx = context.Funcs[val.IntLiteral].StartIdx - 1;
 		context.instrStream.PC = instIdx;
 	}
 
