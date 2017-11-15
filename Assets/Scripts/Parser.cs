@@ -100,15 +100,22 @@ public class Parser
 				
 				if (currentToken.Type == Tokenizer.TokenType.Ident)
 				{
-					if (!tables.AddVar(currentToken.Lexeme))
+					if (!tables.AddVar(currentToken.Lexeme, scope))
 					{
-						errorHandler.ParcerLogError("Var Already Exists");
+						errorHandler.ParserLogError("Var Already Exists");
 						return false;
+					}
+
+					if (scope != -1){
+						if (!tables.FuncIncrementFrameSize(scope)){
+							errorHandler.ParserLogError("Could not Find Function that Corresponds to Scope");
+							return false;
+						}
 					}
 				}
 				else
 				{
-					errorHandler.ParcerLogError("Ident Expected");
+					errorHandler.ParserLogError("Ident Expected");
 					return false;
 				}
 
@@ -120,7 +127,7 @@ public class Parser
 			{
 				if (scope != -1)
 				{
-					errorHandler.ParcerLogError("Declaring Functions in Functions is Illegal");
+					errorHandler.ParserLogError("Declaring Functions in Functions is Illegal");
 					return false;
 				}
 				
@@ -130,13 +137,13 @@ public class Parser
 				{
 					if (!tables.AddFunc(currentToken.Lexeme, instrIdx, out scope))
 					{
-						errorHandler.ParcerLogError("Function Already Exists");
+						errorHandler.ParserLogError("Function Already Exists");
 						return false;
 					}
 				}
 				else
 				{
-					errorHandler.ParcerLogError("Ident Expected");
+					errorHandler.ParserLogError("Ident Expected");
 					return false;
 				}
 
@@ -159,7 +166,7 @@ public class Parser
 				// Is it a label?
 				if (currentToken.Type == Tokenizer.TokenType.Colon)
 				{
-					tables.AddLabel(ident, instrIdx);
+					tables.AddLabel(ident, instrIdx, scope);
 
 					currentToken = tokenizer.GetNextToken();
 				}
@@ -180,7 +187,7 @@ public class Parser
 			}
 			else
 			{
-				errorHandler.ParcerLogError("Unexpected Token");
+				errorHandler.ParserLogError("Unexpected Token");
 				return false;
 			}
 		}
@@ -191,6 +198,7 @@ public class Parser
 	// Parse instructions
 	bool Pass2()
 	{
+		scope = -1;
 		Instruction currentInstruction;
 		Tokenizer.Token currentToken = tokenizer.GetNextToken();
 
@@ -219,10 +227,18 @@ public class Parser
 			{
 				currentToken = tokenizer.GetNextToken(); // Skip the FUNC reserved word
 
+				FuncDecl func;
+				if (!tables.GetFuncByIdent(currentToken.Lexeme, out func)){
+					// Error imposible
+					return false;
+				}
+				scope = func.scope;
+
 				currentToken = tokenizer.GetNextToken(); // Skip FUNC`s identifier
 			}
 			else if (currentToken.Type == Tokenizer.TokenType.Rsvd_EndFunc)
 			{
+				scope = -1;
 				currentToken = tokenizer.GetNextToken(); // Skip the ENDFUNC reserved word
 			}
 			// ===================================================================
@@ -247,7 +263,7 @@ public class Parser
 
 					if (!tables.GetInstrLookUp(ident, out instr))
 					{
-						errorHandler.ParcerLogError("Syntax Error");
+						errorHandler.ParserLogError("Syntax Error");
 						return false;
 					}
 
@@ -267,7 +283,7 @@ public class Parser
 							currentToken = tokenizer.GetNextToken();
 							if (currentToken.Type != Tokenizer.TokenType.Comma)
 							{
-								errorHandler.ParcerLogError("Comma Expected");
+								errorHandler.ParserLogError("Comma Expected");
 								return false;
 							}
 							
@@ -285,21 +301,25 @@ public class Parser
 							{
 								VarDecl varDecl;
 								
-								if (!tables.GetVarByIdent(currentToken.Lexeme, out varDecl))
+								if (!tables.GetVarByIdent(currentToken.Lexeme, out varDecl, scope))
 								{
-									errorHandler.ParcerLogError("Variable Doesn´t Exist");
+									errorHandler.ParserLogError("Variable Doesn´t Exist");
 									return false;
 								}
-								currentInstruction.Values[i].Type = OpType.MemIdx;
+								if (varDecl.scope == -1)
+									currentInstruction.Values[i].Type = OpType.AbsMemIdx;
+								else
+									currentInstruction.Values[i].Type = OpType.RelMemIdx;
+
 								currentInstruction.Values[i].StackIndex = varDecl.Idx;
 							}
 							else if ((flags & OpFlags.InstrIdx) != 0)
 							{
 								LabelDecl label;
 								
-								if (!tables.GetLabelByName(currentToken.Lexeme, out label))
+								if (!tables.GetLabelByName(currentToken.Lexeme, out label, scope))
 								{
-									errorHandler.ParcerLogError("Label Doesn´t Exist");
+									errorHandler.ParserLogError("Label Doesn´t Exist");
 									return false;
 								}
 
@@ -319,7 +339,7 @@ public class Parser
 						{
 							if ((flags & OpFlags.Literal) == 0)
 							{	
-								errorHandler.ParcerLogError("Doesn´t Allow Literals");
+								errorHandler.ParserLogError("Doesn´t Allow Literals");
 								return false;
 							}
 
@@ -335,7 +355,7 @@ public class Parser
 										currentInstruction.Values[i].FloatLiteral = val;
 									else
 									{
-										errorHandler.ParcerLogError("Error Parsing Float Value");
+										errorHandler.ParserLogError("Error Parsing Float Value");
 										return false;
 									}
 								}
@@ -349,7 +369,7 @@ public class Parser
 										currentInstruction.Values[i].IntLiteral = val;
 									else
 									{
-										errorHandler.ParcerLogError("Error Parsing Int Value");
+										errorHandler.ParserLogError("Error Parsing Int Value");
 										return false;
 									}
 								}
@@ -360,7 +380,7 @@ public class Parser
 								}
 								else 
 								{
-									errorHandler.ParcerLogError("Error Parsing Literal Value");
+									errorHandler.ParserLogError("Error Parsing Literal Value");
 									return false;
 								}
 							}
@@ -372,7 +392,7 @@ public class Parser
 						}
 						else
 						{
-							errorHandler.ParcerLogError("Unexpected Token");
+							errorHandler.ParserLogError("Unexpected Token");
 							return false;
 						}
 					}
@@ -386,7 +406,7 @@ public class Parser
 			}
 			else
 			{
-				errorHandler.ParcerLogError("Unexpected Token");
+				errorHandler.ParserLogError("Unexpected Token");
 				return false;
 			}
 		}

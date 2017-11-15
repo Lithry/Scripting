@@ -454,20 +454,28 @@ public class Script{
 		Value val = ResolveOpValue(values[0]);
 		CallStack ret = new CallStack();
 		ret.ReturnIdx = context.instrStream.PC;
+		ret.ReturnTopStackIdx = context.stack.TopStackIdx;
 		context.CallStack.Push(ret);
 		int instIdx = context.Funcs[val.IntLiteral].StartIdx - 1;
+		context.stack.TopStackIdx += context.Funcs[val.IntLiteral].frameSize;
 		context.instrStream.PC = instIdx;
+		Debug.Log("[InstrJsr - TopStackIdx] - " + context.stack.TopStackIdx.ToString());
+		Debug.Log("[InstrJsr - FrameSize] - " + context.Funcs[val.IntLiteral].frameSize.ToString());
 	}
 
 	private void InstrRet(Value[] values){
-		context.instrStream.PC = context.CallStack.Pop().ReturnIdx;
+		CallStack top = context.CallStack.Pop();
+		context.instrStream.PC = top.ReturnIdx;
+		context.stack.TopStackIdx = top.ReturnTopStackIdx;
 	}
 
 	private Value ResolveOpValue(Value val){
 		switch(val.Type){
-			case OpType.MemIdx:
+			case OpType.AbsMemIdx:
 				return context.stack.Elements[val.IntLiteral];
-
+			case OpType.RelMemIdx:
+				CallStack call =  context.CallStack.Peek();
+				return context.stack.Elements[val.IntLiteral + call.ReturnTopStackIdx + context.stack.StackStartIdx];
 			default:
 				return val;
 		}

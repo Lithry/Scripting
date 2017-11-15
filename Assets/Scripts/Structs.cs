@@ -29,6 +29,7 @@ public struct LabelDecl
 {
 	public int Idx;
 	public string Ident;
+	public int scope;
 }
 
 public struct InstrDecl
@@ -42,6 +43,7 @@ public struct VarDecl
 {
 	public string Ident;
 	public int Idx;
+	public int scope;
 
 	// TODO: add func id
 }
@@ -50,6 +52,8 @@ public struct FuncDecl
 {
 	public string Ident;
 	public int StartIdx;
+	public int scope;
+	public int frameSize;
 }
 
 // ==================================================
@@ -85,7 +89,8 @@ public enum OpType
 	Int,
 	Float, 
 	String, 
-	MemIdx,
+	AbsMemIdx,
+	RelMemIdx,
 	InstrIdx, 
 	HostAPICallString,
 	HostAPICallIdx,
@@ -136,10 +141,12 @@ public struct HostFuncs{
 
 public struct Function{
 	public int StartIdx;
+	public int frameSize;
 }
 
 public struct CallStack{
 	public int ReturnIdx;
+	public int ReturnTopStackIdx;
 }
 
 public class ScriptContext

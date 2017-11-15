@@ -21,28 +21,29 @@ public class Tables
 		startPC = -1;
 	}
 
-	public bool AddLabel(string ident, int idx)
+	public bool AddLabel(string ident, int idx, int scope)
 	{
 		LabelDecl label;
 		
-		if (GetLabelByName(ident, out label)) // Already exists!
+		if (GetLabelByName(ident, out label, scope)) // Already exists!
 			return false;
 
 		label = new LabelDecl();
 
 		label.Ident = ident;
 		label.Idx = idx;
+		label.scope = scope;
 
 		labelsTable.Add(label);
 
 		return true;
 	}	
 
-	public bool GetLabelByName(string name, out LabelDecl label)
+	public bool GetLabelByName(string name, out LabelDecl label, int scope)
 	{
 		for(int i = 0; i < labelsTable.Count; i++)
 		{
-			if (labelsTable[i].Ident == name)
+			if (labelsTable[i].Ident == name && labelsTable[i].scope == scope)
 			{
 				label = labelsTable[i];
 				return true;
@@ -54,28 +55,29 @@ public class Tables
 		return false;
 	}
 	
-	public bool AddVar(string ident)
+	public bool AddVar(string ident, int scope)
 	{
 		VarDecl var;
 
-		if (GetVarByIdent(ident, out var))
+		if (GetVarByIdent(ident, out var, scope))
 			return false;
 
 		var = new VarDecl();
 
 		var.Ident = ident;
 		var.Idx = varsTable.Count;
+		var.scope = scope;
 
 		varsTable.Add(var);
 
 		return true;
 	}
 	
-	public bool GetVarByIdent(string ident, out VarDecl varDecl)
+	public bool GetVarByIdent(string ident, out VarDecl varDecl, int scope)
 	{
 		for(int i = 0; i < varsTable.Count; i++)
 		{
-			if (varsTable[i].Ident == ident)
+			if (varsTable[i].Ident == ident && (varsTable[i].scope == -1 || varsTable[i].scope == scope))
 			{
 				varDecl = varsTable[i];
 				return true;
@@ -103,9 +105,8 @@ public class Tables
 
 		func.Ident = ident;
 		func.StartIdx = idx;
-
 		funcTable.Add(func);
-		scope = funcTable.Count - 1;
+		scope = func.scope = funcTable.Count - 1;
 
 		return true;
 	}
@@ -122,6 +123,20 @@ public class Tables
 
 		funcDecl = new FuncDecl();
 
+		return false;
+	}
+
+	public bool FuncIncrementFrameSize(int scope){
+		for(int i = 0; i < funcTable.Count; i++)
+		{
+			if (funcTable[i].scope == scope)
+			{
+				FuncDecl func = funcTable[i];
+				func.frameSize += 1;
+				funcTable[i] = func;
+				return true;
+			}	
+		}
 		return false;
 	}
 

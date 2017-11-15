@@ -64,7 +64,8 @@ public class ByteCode
 					switch(v.Type)
 					{
 						case OpType.Int:
-						case OpType.MemIdx:
+						case OpType.AbsMemIdx:
+						case OpType.RelMemIdx:
 						case OpType.InstrIdx:
 						case OpType.FuncIdx:
 							bw.Write(v.IntLiteral);
@@ -87,6 +88,7 @@ public class ByteCode
 		bw.Write(tables.GetFunctions().Count);
 		for (int i = 0; i < tables.GetFunctions().Count; i++){
 			bw.Write(tables.GetFunctions()[i].StartIdx);
+			bw.Write(tables.GetFunctions()[i].frameSize);
 		}
 		
 		bw.Flush();
@@ -172,7 +174,8 @@ public class ByteCode
 					switch(type)
 					{
 						case OpType.Int:
-						case OpType.MemIdx:
+						case OpType.AbsMemIdx:
+						case OpType.RelMemIdx:
 						case OpType.InstrIdx:
 						case OpType.FuncIdx:
 							inst.Values[j].IntLiteral = br.ReadInt32();
@@ -196,6 +199,7 @@ public class ByteCode
 		Function newFunc = new Function();
 		for (int i = 0; i < count; i++){
 			newFunc.StartIdx = br.ReadInt32();
+			newFunc.frameSize = br.ReadInt32();
 			context.Funcs.Add(newFunc);
 		}
 
