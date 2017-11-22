@@ -275,6 +275,45 @@ public class Script{
 		ResolveOpValueAndSet(0, val1);
 	}
 
+	private void InstrMod(Value[] values){
+		Value val1 = ResolveOpValue(values[0]);
+		Value val2 = ResolveOpValue(values[1]);
+
+		switch (val1.Type)
+		{
+			case OpType.Int:
+				switch (val2.Type)
+				{
+					case OpType.Int:
+						val1.IntLiteral %= val2.IntLiteral;
+						break;
+					case OpType.Float:
+						val1.FloatLiteral = (float)val1.IntLiteral % val2.FloatLiteral;
+						break;
+					case OpType.String:
+						break;
+				}
+				
+				break;
+			case OpType.Float:
+				switch (val2.Type)
+				{
+					case OpType.Int:
+						break;
+					case OpType.Float:
+						break;
+					case OpType.String:
+						break;
+				}
+				val.FloatLiteral = Mathf.Abs(val.FloatLiteral);
+				break;
+			case OpType.String:
+				break;
+		}
+
+		ResolveOpValueAndSet(0, val1);
+	}
+
 	private void InstrExp(Value[] values)
 	{
 		Value val1 = ResolveOpValue(values[0]);

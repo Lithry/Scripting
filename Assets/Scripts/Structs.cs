@@ -166,24 +166,24 @@ public class OpCodes
 	public const int INSTR_SUB					= 2;
 	public const int INSTR_MUL					= 3;
 	public const int INSTR_DIV					= 4;
-	public const int INSTR_MOD					= 5;
-	public const int INSTR_EXP					= 6;
-	public const int INSTR_NEG					= 7;
-	public const int INSTR_INC					= 8;
-	public const int INSTR_DEC					= 9;
-	public const int INSTR_AND					= 10;
-	public const int INSTR_OR					= 11;
-	public const int INSTR_XOR					= 12;
-	public const int INSTR_NOT					= 13;
-	public const int INSTR_SHL					= 14;
-	public const int INSTR_SHR					= 15;
+	public const int INSTR_MOD					= 5; // %
+	public const int INSTR_EXP					= 6; // Mathf.exp
+	public const int INSTR_NEG					= 7; // * -1
+	public const int INSTR_INC					= 8; // ++
+	public const int INSTR_DEC					= 9; // --
+	public const int INSTR_AND					= 10;// &
+	public const int INSTR_OR					= 11;// |
+	public const int INSTR_XOR					= 12;// ^
+	public const int INSTR_NOT					= 13;// ~
+	public const int INSTR_SHL					= 14;// <<
+	public const int INSTR_SHR					= 15;// >>
 	public const int INSTR_JMP					= 16;
 	public const int INSTR_JE					= 17;
 	public const int INSTR_JNE					= 18;
 	public const int INSTR_JG					= 19;
 	public const int INSTR_JL					= 20;
-	public const int INSTR_JGE					= 21;
-	public const int INSTR_JLE					= 22;
+	public const int INSTR_JGE					= 21;// >=
+	public const int INSTR_JLE					= 22;// <=
 	public const int INSTR_PUSH					= 23;
 	public const int INSTR_POP					= 24;
 	public const int INSTR_PAUSE				= 25;
@@ -191,7 +191,7 @@ public class OpCodes
 	public const int INSTR_JSR					= 27;
 	public const int INSTR_RET					= 28;
 	public const int INSTR_CALLHOST				= 29;
-	public const int INSTR_LN					= 30;
+	public const int INSTR_LN					= 30;// Logaritmo Natural Mathf.Log
 
 	public const int COUNT		 				= 31;
 }
