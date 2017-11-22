@@ -11,6 +11,9 @@ public class Tables
 	List<FuncDecl> funcTable = new List<FuncDecl>();
 	List<Instruction> instrStream = new List<Instruction>();
 	int startPC;
+	int globalVarSize = 0;
+
+	int varIdx = 0;
 
 	public void Clear()
 	{
@@ -19,6 +22,8 @@ public class Tables
 		varsTable.Clear();
 		funcTable.Clear();
 		startPC = -1;
+		globalVarSize = 0;
+		varIdx = 0;
 	}
 
 	public bool AddLabel(string ident, int idx, int scope)
@@ -65,8 +70,23 @@ public class Tables
 		var = new VarDecl();
 
 		var.Ident = ident;
-		var.Idx = varsTable.Count;
+		if (scope == -1)
+		{
+			var.Idx = varIdx;
+			varIdx++;
+		}
+		else
+		{
+			FuncDecl func = funcTable[scope];
+			var.Idx = func.varIdx;
+			func.varIdx++;
+			funcTable[scope] = func;
+		}
+
 		var.scope = scope;
+
+		if (scope == -1)
+			globalVarSize++;
 
 		varsTable.Add(var);
 
@@ -94,6 +114,11 @@ public class Tables
 		return varsTable;
 	}
 
+	public int GetGlobalVarSize()
+	{
+		return globalVarSize;
+	}
+
 	public bool AddFunc(string ident, int idx, out int scope){
 		scope = -1;
 		FuncDecl func;
@@ -105,8 +130,8 @@ public class Tables
 
 		func.Ident = ident;
 		func.StartIdx = idx;
+		scope = func.scope = funcTable.Count;
 		funcTable.Add(func);
-		scope = func.scope = funcTable.Count - 1;
 
 		return true;
 	}
@@ -127,17 +152,11 @@ public class Tables
 	}
 
 	public bool FuncIncrementFrameSize(int scope){
-		for(int i = 0; i < funcTable.Count; i++)
-		{
-			if (funcTable[i].scope == scope)
-			{
-				FuncDecl func = funcTable[i];
-				func.frameSize += 1;
-				funcTable[i] = func;
-				return true;
-			}	
-		}
-		return false;
+		FuncDecl func = funcTable[scope];
+		func.frameSize += 1;
+		funcTable[scope] = func;
+
+		return true;
 	}
 
 	public bool AddInstrToStream(Instruction instruction)

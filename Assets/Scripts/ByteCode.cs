@@ -37,7 +37,7 @@ public class ByteCode
 		header.PCStartIdx = tables.GetStartPC();
 		header.StackSize = 1024;
 		
-		header.GlobalVarsSize = tables.GetVarsTable().Count;
+		header.GlobalVarsSize = tables.GetGlobalVarSize();
 
 		bw.Write(header.Magic);
 		bw.Write(header.MajorVersion);

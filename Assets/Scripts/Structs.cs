@@ -54,6 +54,7 @@ public struct FuncDecl
 	public int StartIdx;
 	public int scope;
 	public int frameSize;
+	public int varIdx;
 }
 
 // ==================================================

@@ -326,6 +326,19 @@ public class Parser
 								currentInstruction.Values[i].Type = OpType.InstrIdx;
 								currentInstruction.Values[i].InstrIndex = label.Idx;
 							}
+							else if ((flags & OpFlags.FuncIdx) != 0)
+							{
+								FuncDecl func;
+								
+								if (!tables.GetFuncByIdent(currentToken.Lexeme, out func))
+								{
+									errorHandler.ParserLogError("Function Doesn´t Exist");
+									return false;
+								}
+
+								currentInstruction.Values[i].Type = OpType.FuncIdx;
+								currentInstruction.Values[i].FunctionIndex = func.scope;
+							}
 							else if ((flags & OpFlags.HostAPICallIdx) != 0)
 							{
 								currentInstruction.Values[i].Type = OpType.HostAPICallString;

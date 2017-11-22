@@ -459,8 +459,6 @@ public class Script{
 		int instIdx = context.Funcs[val.IntLiteral].StartIdx - 1;
 		context.stack.TopStackIdx += context.Funcs[val.IntLiteral].frameSize;
 		context.instrStream.PC = instIdx;
-		Debug.Log("[InstrJsr - TopStackIdx] - " + context.stack.TopStackIdx.ToString());
-		Debug.Log("[InstrJsr - FrameSize] - " + context.Funcs[val.IntLiteral].frameSize.ToString());
 	}
 
 	private void InstrRet(Value[] values){
@@ -482,7 +480,17 @@ public class Script{
 	}
 
 	private void ResolveOpValueAndSet(int idx, Value val){
-		context.stack.Elements[GetOpValue(idx).IntLiteral] = val;
+		Value dst = GetOpValue(idx);
+
+		switch(dst.Type){
+			case OpType.AbsMemIdx:
+				context.stack.Elements[dst.IntLiteral] = val;
+				break;
+			case OpType.RelMemIdx:
+				CallStack call =  context.CallStack.Peek();
+				context.stack.Elements[dst.IntLiteral + call.ReturnTopStackIdx + context.stack.StackStartIdx] = val;
+				break;
+		}
 	}
 
 	private Value GetOpValue(int idx){
