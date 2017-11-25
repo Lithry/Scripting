@@ -58,8 +58,17 @@ public class Script{
 		instrExec[OpCodes.INSTR_CALLHOST] = CallHost;
 		instrExec[OpCodes.INSTR_MUL] = InstrMul;
 		instrExec[OpCodes.INSTR_DIV] = InstrDiv;
-
+		instrExec[OpCodes.INSTR_MOD] = InstrMod;
 		instrExec[OpCodes.INSTR_EXP] = InstrExp;
+		instrExec[OpCodes.INSTR_NEG] = InstrNeg;
+		instrExec[OpCodes.INSTR_INC] = InstrInc;
+		instrExec[OpCodes.INSTR_DEC] = InstrDec;
+		instrExec[OpCodes.INSTR_AND] = InstrAnd;
+		instrExec[OpCodes.INSTR_OR] = InstrOr;
+		instrExec[OpCodes.INSTR_XOR] = InstrXor;
+		instrExec[OpCodes.INSTR_NOT] = InstrNot;
+		instrExec[OpCodes.INSTR_SHL] = InstrShl;
+		instrExec[OpCodes.INSTR_SHR] = InstrShr;
 		instrExec[OpCodes.INSTR_JSR] = InstrJsr;
 		instrExec[OpCodes.INSTR_RET] = InstrRet;
 		
@@ -289,6 +298,7 @@ public class Script{
 						break;
 					case OpType.Float:
 						val1.FloatLiteral = (float)val1.IntLiteral % val2.FloatLiteral;
+						val1.Type = OpType.Float;
 						break;
 					case OpType.String:
 						break;
@@ -299,13 +309,14 @@ public class Script{
 				switch (val2.Type)
 				{
 					case OpType.Int:
+						val1.FloatLiteral = val1.IntLiteral % (float)val2.IntLiteral;
 						break;
 					case OpType.Float:
+						val1.FloatLiteral %= val2.FloatLiteral;
 						break;
 					case OpType.String:
 						break;
 				}
-				val.FloatLiteral = Mathf.Abs(val.FloatLiteral);
 				break;
 			case OpType.String:
 				break;
@@ -316,72 +327,305 @@ public class Script{
 
 	private void InstrExp(Value[] values)
 	{
+		Value val = ResolveOpValue(values[0]);
+		
+		switch(val.Type)
+		{
+			case OpType.Int:
+				Mathf.Exp(val.IntLiteral);	
+				break;
+			case OpType.Float:
+				Mathf.Exp(val.FloatLiteral);
+				break;
+			case OpType.String:
+			break;
+		}
+		
+		ResolveOpValueAndSet(0, val);
+	}
+
+	private void InstrNeg(Value[] values)
+	{
+		Value val = ResolveOpValue(values[0]);
+		
+		switch(val.Type)
+		{
+			case OpType.Int:
+				val.IntLiteral *= -1;	
+				break;
+			case OpType.Float:
+				val.FloatLiteral *= -1;
+				break;
+			case OpType.String:
+			break;
+		}
+		
+		ResolveOpValueAndSet(0, val);
+	}
+
+	private void InstrInc(Value[] values)
+	{
+		Value val = ResolveOpValue(values[0]);
+		
+		switch(val.Type)
+		{
+			case OpType.Int:
+				val.IntLiteral++;	
+				break;
+			case OpType.Float:
+				val.FloatLiteral++;
+				break;
+			case OpType.String:
+			break;
+		}
+		
+		ResolveOpValueAndSet(0, val);
+	}
+
+	private void InstrDec(Value[] values)
+	{
+		Value val = ResolveOpValue(values[0]);
+		
+		switch(val.Type)
+		{
+			case OpType.Int:
+				val.IntLiteral--;	
+				break;
+			case OpType.Float:
+				val.FloatLiteral--;
+				break;
+			case OpType.String:
+			break;
+		}
+		
+		ResolveOpValueAndSet(0, val);
+	}
+
+	private void InstrAnd(Value[] values)
+	{
 		Value val1 = ResolveOpValue(values[0]);
 		Value val2 = ResolveOpValue(values[1]);
-
+		
 		switch(val1.Type)
 		{
 			case OpType.Int:
-				int expInt = val1.IntLiteral;
-				if (val2.Type == OpType.Int)
-					if (val2.IntLiteral == 0){
-						val1.IntLiteral = 1;
-					}
-					else if (val2.IntLiteral < 0){
-
-					}
-					else{
-						for (int i = 0; i < val2.IntLiteral - 1; i++){
-							val1.IntLiteral *= expInt;
-						}
-					}
-				else if (val2.Type == OpType.Float)
+				switch (val2.Type)
 				{
-					if ((int)val2.FloatLiteral == 0){
-						val1.IntLiteral = 1;
-					}
-					else if ((int)val2.FloatLiteral < 0){
-
-					}
-					else{
-						for (int i = 0; i < (int)val2.FloatLiteral - 1; i++){
-							val1.IntLiteral *= expInt;
-						}
-					}
+					case OpType.Int:
+						val1.IntLiteral &= val2.IntLiteral;
+						break;
+					case OpType.Float:
+						val1.IntLiteral &= (int)val2.FloatLiteral;
+						break;
+					case OpType.String:
+						break;
 				}
-			break;
+				break;
 			case OpType.Float:
-				float expFloat = val1.FloatLiteral;
-				if (val2.Type == OpType.Int)
-					if (val2.IntLiteral == 0){
-						val1.FloatLiteral = 1.0f;
-					}
-					else if (val2.IntLiteral < 0){
-					
-					}
-					else{
-						for (int i = 0; i < val2.IntLiteral - 1; i++){
-							val1.FloatLiteral *= expFloat;
-						}
-					}
-				else if (val2.Type == OpType.Float){
-
-				
-					if ((int)val2.FloatLiteral == 0){
-						val1.FloatLiteral = 1.0f;
-					}
-					else if ((int)val2.FloatLiteral < 0){
-					
-					}
-					else{
-						for (int i = 0; i < (int)val2.FloatLiteral - 1; i++){
-							val1.FloatLiteral *= expFloat;
-						}
-					}
+				switch (val2.Type)
+				{
+					case OpType.Int:
+						val1.IntLiteral = (int)val2.FloatLiteral & val2.IntLiteral;
+						val1.Type = OpType.Int;
+						break;
+					case OpType.Float:
+						val1.IntLiteral = (int)val1.FloatLiteral & (int)val2.FloatLiteral;
+						val1.Type = OpType.Int;
+						break;
+					case OpType.String:
+						break;
 				}
-			break;
+				break;
 			case OpType.String:
-			break;
+				break;
+		}
+		
+		ResolveOpValueAndSet(0, val1);
+	}
+
+	private void InstrOr(Value[] values)
+	{
+		Value val1 = ResolveOpValue(values[0]);
+		Value val2 = ResolveOpValue(values[1]);
+		
+		switch(val1.Type)
+		{
+			case OpType.Int:
+				switch (val2.Type)
+				{
+					case OpType.Int:
+						val1.IntLiteral |= val2.IntLiteral;
+						break;
+					case OpType.Float:
+						val1.IntLiteral |= (int)val2.FloatLiteral;
+						break;
+					case OpType.String:
+						break;
+				}
+				break;
+			case OpType.Float:
+				switch (val2.Type)
+				{
+					case OpType.Int:
+						val1.IntLiteral = (int)val2.FloatLiteral | val2.IntLiteral;
+						val1.Type = OpType.Int;
+						break;
+					case OpType.Float:
+						val1.IntLiteral = (int)val1.FloatLiteral | (int)val2.FloatLiteral;
+						val1.Type = OpType.Int;
+						break;
+					case OpType.String:
+						break;
+				}
+				break;
+			case OpType.String:
+				break;
+		}
+		
+		ResolveOpValueAndSet(0, val1);
+	}
+
+	private void InstrXor(Value[] values)
+	{
+		Value val1 = ResolveOpValue(values[0]);
+		Value val2 = ResolveOpValue(values[1]);
+		
+		switch(val1.Type)
+		{
+			case OpType.Int:
+				switch (val2.Type)
+				{
+					case OpType.Int:
+						val1.IntLiteral ^= val2.IntLiteral;
+						break;
+					case OpType.Float:
+						val1.IntLiteral ^= (int)val2.FloatLiteral;
+						break;
+					case OpType.String:
+						break;
+				}
+				break;
+			case OpType.Float:
+				switch (val2.Type)
+				{
+					case OpType.Int:
+						val1.IntLiteral = (int)val2.FloatLiteral ^ val2.IntLiteral;
+						val1.Type = OpType.Int;
+						break;
+					case OpType.Float:
+						val1.IntLiteral = (int)val1.FloatLiteral ^ (int)val2.FloatLiteral;
+						val1.Type = OpType.Int;
+						break;
+					case OpType.String:
+						break;
+				}
+				break;
+			case OpType.String:
+				break;
+		}
+		
+		ResolveOpValueAndSet(0, val1);
+	}
+
+	private void InstrNot(Value[] values)
+	{
+		Value val = ResolveOpValue(values[0]);
+		
+		switch(val.Type)
+		{
+			case OpType.Int:
+					val.IntLiteral = ~val.IntLiteral;
+				break;
+			case OpType.Float:
+					val.IntLiteral = ~(int)val.FloatLiteral;
+					val.Type = OpType.Int;
+				break;
+			case OpType.String:
+				break;
+		}
+		
+		ResolveOpValueAndSet(0, val);
+	}
+
+	private void InstrShl(Value[] values)
+	{
+		Value val1 = ResolveOpValue(values[0]);
+		Value val2 = ResolveOpValue(values[1]);
+		
+		switch(val1.Type)
+		{
+			case OpType.Int:
+				switch (val2.Type)
+				{
+					case OpType.Int:
+						val1.IntLiteral = val1.IntLiteral << val2.IntLiteral;
+						break;
+					case OpType.Float:
+						val1.IntLiteral = val1.IntLiteral << (int)val2.FloatLiteral;
+						break;
+					case OpType.String:
+						break;
+				}
+				break;
+			case OpType.Float:
+				switch (val2.Type)
+				{
+					case OpType.Int:
+						val1.IntLiteral = (int)val1.FloatLiteral << val2.IntLiteral;
+						val1.Type = OpType.Int;
+						break;
+					case OpType.Float:
+						val1.IntLiteral = (int)val1.FloatLiteral << (int)val2.FloatLiteral;
+						val1.Type = OpType.Int;
+						break;
+					case OpType.String:
+						break;
+				}
+				break;
+			case OpType.String:
+				break;
+		}
+		
+		ResolveOpValueAndSet(0, val1);
+	}
+
+private void InstrShr(Value[] values)
+	{
+		Value val1 = ResolveOpValue(values[0]);
+		Value val2 = ResolveOpValue(values[1]);
+		
+		switch(val1.Type)
+		{
+			case OpType.Int:
+				switch (val2.Type)
+				{
+					case OpType.Int:
+						val1.IntLiteral = val1.IntLiteral >> val2.IntLiteral;
+						break;
+					case OpType.Float:
+						val1.IntLiteral = val1.IntLiteral >> (int)val2.FloatLiteral;
+						break;
+					case OpType.String:
+						break;
+				}
+				break;
+			case OpType.Float:
+				switch (val2.Type)
+				{
+					case OpType.Int:
+						val1.IntLiteral = (int)val1.FloatLiteral >> val2.IntLiteral;
+						val1.Type = OpType.Int;
+						break;
+					case OpType.Float:
+						val1.IntLiteral = (int)val1.FloatLiteral >> (int)val2.FloatLiteral;
+						val1.Type = OpType.Int;
+						break;
+					case OpType.String:
+						break;
+				}
+				break;
+			case OpType.String:
+				break;
 		}
 		
 		ResolveOpValueAndSet(0, val1);
