@@ -48,14 +48,7 @@ public class Script{
 	private void SetInstrDlg(){
 		instrExec[OpCodes.INSTR_MOV] = InstrMov;
 		instrExec[OpCodes.INSTR_ADD] = InstrAdd;
-		instrExec[OpCodes.INSTR_EXIT] = InstrExit;
-		instrExec[OpCodes.INSTR_JMP] = InstrJmp;
-		instrExec[OpCodes.INSTR_JE] = InstrJe;
-		instrExec[OpCodes.INSTR_PAUSE] = InstrPause;
-		instrExec[OpCodes.INSTR_POP] = InstrPop;
-		instrExec[OpCodes.INSTR_PUSH] = InstrPush;
 		instrExec[OpCodes.INSTR_SUB] = InstrSub;
-		instrExec[OpCodes.INSTR_CALLHOST] = CallHost;
 		instrExec[OpCodes.INSTR_MUL] = InstrMul;
 		instrExec[OpCodes.INSTR_DIV] = InstrDiv;
 		instrExec[OpCodes.INSTR_MOD] = InstrMod;
@@ -69,8 +62,22 @@ public class Script{
 		instrExec[OpCodes.INSTR_NOT] = InstrNot;
 		instrExec[OpCodes.INSTR_SHL] = InstrShl;
 		instrExec[OpCodes.INSTR_SHR] = InstrShr;
+		instrExec[OpCodes.INSTR_JMP] = InstrJmp;
+		instrExec[OpCodes.INSTR_JE] = InstrJe;
+		instrExec[OpCodes.INSTR_JNE] = InstrJne;
+		instrExec[OpCodes.INSTR_JG] = InstrJg;
+		instrExec[OpCodes.INSTR_JL] = InstrJl;
+		instrExec[OpCodes.INSTR_JGE] = InstrJge;
+		instrExec[OpCodes.INSTR_JLE] = InstrJle;
+		instrExec[OpCodes.INSTR_PUSH] = InstrPush;
+		instrExec[OpCodes.INSTR_POP] = InstrPop;
+		instrExec[OpCodes.INSTR_PAUSE] = InstrPause;
+		instrExec[OpCodes.INSTR_EXIT] = InstrExit;
 		instrExec[OpCodes.INSTR_JSR] = InstrJsr;
 		instrExec[OpCodes.INSTR_RET] = InstrRet;
+		instrExec[OpCodes.INSTR_CALLHOST] = CallHost;
+		instrExec[OpCodes.INSTR_LN] = InstrLn;
+
 		
 	}
 
@@ -675,6 +682,161 @@ private void InstrShr(Value[] values)
 			context.instrStream.PC = val1.IntLiteral - 1;
 	}
 
+	private void InstrJne(Value[] values){
+		Value val1 = ResolveOpValue(values[0]);
+		Value val2 = ResolveOpValue(values[1]);
+		Value val3 = ResolveOpValue(values[2]);
+		
+		bool shouldJump = false;
+
+		switch(val2.Type)
+		{
+			case OpType.Int:
+				if (val3.Type == OpType.Int)
+					shouldJump = val2.IntLiteral != val3.IntLiteral;
+				else if (val3.Type == OpType.Float)
+					shouldJump = val2.IntLiteral != (int)val3.FloatLiteral;
+				else if(val3.Type == OpType.String)
+					shouldJump = val2.IntLiteral.ToString() != val3.StringLiteral;
+			break;
+			case OpType.Float:
+				if (val3.Type == OpType.Int)
+					shouldJump = val2.FloatLiteral != val3.IntLiteral;
+				else if(val3.Type == OpType.Float)
+					shouldJump = val2.FloatLiteral != val3.FloatLiteral;
+				else if(val3.Type == OpType.String)
+					shouldJump = val2.FloatLiteral.ToString() != val3.StringLiteral;
+			break;
+			case OpType.String:
+				if (val3.Type == OpType.Int)
+					shouldJump = val2.StringLiteral != val3.IntLiteral.ToString();
+				else if(val3.Type == OpType.Float)
+					shouldJump = val2.StringLiteral != val3.FloatLiteral.ToString();
+				else if (val3.Type == OpType.String)
+					shouldJump = val2.StringLiteral != val3.StringLiteral;
+			break;
+		}
+
+		if (shouldJump)
+			context.instrStream.PC = val1.IntLiteral - 1;
+	}
+
+	private void InstrJg(Value[] values){
+		Value val1 = ResolveOpValue(values[0]);
+		Value val2 = ResolveOpValue(values[1]);
+		Value val3 = ResolveOpValue(values[2]);
+		
+		bool shouldJump = false;
+
+		switch(val2.Type)
+		{
+			case OpType.Int:
+				if (val3.Type == OpType.Int)
+					shouldJump = val2.IntLiteral > val3.IntLiteral;
+				else if (val3.Type == OpType.Float)
+					shouldJump = val2.IntLiteral > (int)val3.FloatLiteral;
+				break;
+			case OpType.Float:
+				if (val3.Type == OpType.Int)
+					shouldJump = val2.FloatLiteral > val3.IntLiteral;
+				else if(val3.Type == OpType.Float)
+					shouldJump = val2.FloatLiteral > val3.FloatLiteral;
+				break;
+			case OpType.String:
+				break;
+		}
+
+		if (shouldJump)
+			context.instrStream.PC = val1.IntLiteral - 1;
+	}
+
+	private void InstrJl(Value[] values){
+		Value val1 = ResolveOpValue(values[0]);
+		Value val2 = ResolveOpValue(values[1]);
+		Value val3 = ResolveOpValue(values[2]);
+		
+		bool shouldJump = false;
+
+		switch(val2.Type)
+		{
+			case OpType.Int:
+				if (val3.Type == OpType.Int)
+					shouldJump = val2.IntLiteral < val3.IntLiteral;
+				else if (val3.Type == OpType.Float)
+					shouldJump = val2.IntLiteral < (int)val3.FloatLiteral;
+				break;
+			case OpType.Float:
+				if (val3.Type == OpType.Int)
+					shouldJump = val2.FloatLiteral < val3.IntLiteral;
+				else if(val3.Type == OpType.Float)
+					shouldJump = val2.FloatLiteral < val3.FloatLiteral;
+				break;
+			case OpType.String:
+				break;
+		}
+
+		if (shouldJump)
+			context.instrStream.PC = val1.IntLiteral - 1;
+	}
+
+	private void InstrJge(Value[] values){
+		Value val1 = ResolveOpValue(values[0]);
+		Value val2 = ResolveOpValue(values[1]);
+		Value val3 = ResolveOpValue(values[2]);
+		
+		bool shouldJump = false;
+
+		switch(val2.Type)
+		{
+			case OpType.Int:
+				if (val3.Type == OpType.Int)
+					shouldJump = val2.IntLiteral >= val3.IntLiteral;
+				else if (val3.Type == OpType.Float)
+					shouldJump = val2.IntLiteral >= (int)val3.FloatLiteral;
+				break;
+			case OpType.Float:
+				if (val3.Type == OpType.Int)
+					shouldJump = val2.FloatLiteral >= val3.IntLiteral;
+				else if(val3.Type == OpType.Float)
+					shouldJump = val2.FloatLiteral >= val3.FloatLiteral;
+				break;
+			case OpType.String:
+				break;
+		}
+
+		if (shouldJump)
+			context.instrStream.PC = val1.IntLiteral - 1;
+	}
+
+	private void InstrJle(Value[] values){
+		Value val1 = ResolveOpValue(values[0]);
+		Value val2 = ResolveOpValue(values[1]);
+		Value val3 = ResolveOpValue(values[2]);
+		
+		bool shouldJump = false;
+
+		switch(val2.Type)
+		{
+			case OpType.Int:
+				if (val3.Type == OpType.Int)
+					shouldJump = val2.IntLiteral <= val3.IntLiteral;
+				else if (val3.Type == OpType.Float)
+					shouldJump = val2.IntLiteral <= (int)val3.FloatLiteral;
+				break;
+			case OpType.Float:
+				if (val3.Type == OpType.Int)
+					shouldJump = val2.FloatLiteral <= val3.IntLiteral;
+				else if(val3.Type == OpType.Float)
+					shouldJump = val2.FloatLiteral <= val3.FloatLiteral;
+				break;
+			case OpType.String:
+				break;
+		}
+
+		if (shouldJump)
+			context.instrStream.PC = val1.IntLiteral - 1;
+	}
+
 	private void InstrPush(Value[] values){
 		Value val = ResolveOpValue(values[0]);
 		Push(val);
@@ -749,37 +911,6 @@ private void InstrShr(Value[] values)
 		context.instrStream.PC = top.ReturnIdx;
 		context.stack.TopStackIdx = top.ReturnTopStackIdx;
 	}
-
-	private Value ResolveOpValue(Value val){
-		switch(val.Type){
-			case OpType.AbsMemIdx:
-				return context.stack.Elements[val.IntLiteral];
-			case OpType.RelMemIdx:
-				CallStack call =  context.CallStack.Peek();
-				return context.stack.Elements[val.IntLiteral + call.ReturnTopStackIdx + context.stack.StackStartIdx];
-			default:
-				return val;
-		}
-	}
-
-	private void ResolveOpValueAndSet(int idx, Value val){
-		Value dst = GetOpValue(idx);
-
-		switch(dst.Type){
-			case OpType.AbsMemIdx:
-				context.stack.Elements[dst.IntLiteral] = val;
-				break;
-			case OpType.RelMemIdx:
-				CallStack call =  context.CallStack.Peek();
-				context.stack.Elements[dst.IntLiteral + call.ReturnTopStackIdx + context.stack.StackStartIdx] = val;
-				break;
-		}
-	}
-
-	private Value GetOpValue(int idx){
-		return context.instrStream.Instructions[context.instrStream.PC].Values[idx];
-	}
-
 	private void CallHost(Value[] values){
 		Value[] args = values;
 		switch(values[0].Type){
@@ -832,4 +963,54 @@ private void InstrShr(Value[] values)
 				break;
 		}
 	}
+
+	private void InstrLn(Value[] values){
+		Value val = ResolveOpValue(values[0]);
+		
+		switch (val.Type)
+		{
+			case OpType.Int:
+				val.FloatLiteral = Mathf.Log((float)val.IntLiteral);
+				val.Type = OpType.Float;
+				break;
+			case OpType.Float:
+				val.FloatLiteral = Mathf.Log(val.FloatLiteral);
+				break;
+			case OpType.String:
+				break;
+		}
+
+		ResolveOpValueAndSet(0, val);
+	}
+
+	private Value ResolveOpValue(Value val){
+		switch(val.Type){
+			case OpType.AbsMemIdx:
+				return context.stack.Elements[val.IntLiteral];
+			case OpType.RelMemIdx:
+				CallStack call =  context.CallStack.Peek();
+				return context.stack.Elements[val.IntLiteral + call.ReturnTopStackIdx + context.stack.StackStartIdx];
+			default:
+				return val;
+		}
+	}
+
+	private void ResolveOpValueAndSet(int idx, Value val){
+		Value dst = GetOpValue(idx);
+
+		switch(dst.Type){
+			case OpType.AbsMemIdx:
+				context.stack.Elements[dst.IntLiteral] = val;
+				break;
+			case OpType.RelMemIdx:
+				CallStack call =  context.CallStack.Peek();
+				context.stack.Elements[dst.IntLiteral + call.ReturnTopStackIdx + context.stack.StackStartIdx] = val;
+				break;
+		}
+	}
+
+	private Value GetOpValue(int idx){
+		return context.instrStream.Instructions[context.instrStream.PC].Values[idx];
+	}
+
 }
