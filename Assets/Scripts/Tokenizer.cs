@@ -13,6 +13,7 @@ public class Tokenizer
         String,
         Number,
         Rsvd_Var, // Reserved VAR
+        Rsvd_Arg,
         Rsvd_Func,
         Rsvd_EndFunc,
         EOL, // Fin de linea
@@ -124,6 +125,8 @@ public class Tokenizer
 
                     if (token.Lexeme.ToUpper() == "VAR")
                         token.Type = TokenType.Rsvd_Var;
+                    if (token.Lexeme.ToUpper() == "ARG")
+                        token.Type = TokenType.Rsvd_Arg;
                     if (token.Lexeme.ToUpper() == "FUNC")
                         token.Type = TokenType.Rsvd_Func;
                     if (token.Lexeme.ToUpper() == "ENDFUNC")

@@ -100,7 +100,7 @@ public class Parser
 				
 				if (currentToken.Type == Tokenizer.TokenType.Ident)
 				{
-					if (!tables.AddVar(currentToken.Lexeme, scope))
+					if (!tables.AddVar(currentToken.Lexeme, scope, false))
 					{
 						errorHandler.ParserLogError("Var Already Exists");
 						return false;
@@ -111,6 +111,39 @@ public class Parser
 							errorHandler.ParserLogError("Could not Find Function that Corresponds to Scope");
 							return false;
 						}
+					}
+				}
+				else
+				{
+					errorHandler.ParserLogError("Ident Expected");
+					return false;
+				}
+
+				currentToken = tokenizer.GetNextToken();
+			}
+			// ===================================================================
+			// Parse arguments
+ 			else if (currentToken.Type == Tokenizer.TokenType.Rsvd_Arg)
+			{
+				currentToken = tokenizer.GetNextToken();
+				
+				if (currentToken.Type == Tokenizer.TokenType.Ident)
+				{
+					if (scope != -1){
+						if (!tables.AddVar(currentToken.Lexeme, scope, true))
+						{
+							errorHandler.ParserLogError("Arg Already Exists");
+							return false;
+						}
+
+						if (!tables.FuncIncrementArgFrameSize(scope)){
+							errorHandler.ParserLogError("Could not Find Function that Corresponds to Scope");
+							return false;
+						}
+					}
+					else{
+						errorHandler.ParserLogError("Declaring Arguments outside Functions is Illegal");
+							return false;
 					}
 				}
 				else
@@ -223,6 +256,12 @@ public class Parser
 				
 				currentToken = tokenizer.GetNextToken(); // Skip VAR's identifier
 			}
+			else if (currentToken.Type == Tokenizer.TokenType.Rsvd_Arg)
+			{
+				currentToken = tokenizer.GetNextToken(); // Skip the ARG reserved word
+				
+				currentToken = tokenizer.GetNextToken(); // Skip ARG's identifier
+			}
 			else if (currentToken.Type == Tokenizer.TokenType.Rsvd_Func)
 			{
 				currentToken = tokenizer.GetNextToken(); // Skip the FUNC reserved word
@@ -308,6 +347,8 @@ public class Parser
 								}
 								if (varDecl.scope == -1)
 									currentInstruction.Values[i].Type = OpType.AbsMemIdx;
+								else if (varDecl.isArg)
+									currentInstruction.Values[i].Type = OpType.ArgMemIdx;
 								else
 									currentInstruction.Values[i].Type = OpType.RelMemIdx;
 

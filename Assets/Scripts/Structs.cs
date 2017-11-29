@@ -44,7 +44,7 @@ public struct VarDecl
 	public string Ident;
 	public int Idx;
 	public int scope;
-
+	public bool isArg;
 	// TODO: add func id
 }
 
@@ -54,7 +54,9 @@ public struct FuncDecl
 	public int StartIdx;
 	public int scope;
 	public int frameSize;
+	public int argFrameSize;
 	public int varIdx;
+	public int argIdx;
 }
 
 // ==================================================
@@ -92,6 +94,7 @@ public enum OpType
 	String, 
 	AbsMemIdx,
 	RelMemIdx,
+	ArgMemIdx,
 	InstrIdx, 
 	HostAPICallString,
 	HostAPICallIdx,
@@ -143,11 +146,13 @@ public struct HostFuncs{
 public struct Function{
 	public int StartIdx;
 	public int frameSize;
+	public int argFrameSize;
 }
 
 public struct CallStack{
 	public int ReturnIdx;
 	public int ReturnTopStackIdx;
+	public int argFrameSize;
 }
 
 public class ScriptContext

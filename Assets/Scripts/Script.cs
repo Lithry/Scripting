@@ -900,6 +900,7 @@ private void InstrShr(Value[] values)
 		CallStack ret = new CallStack();
 		ret.ReturnIdx = context.instrStream.PC;
 		ret.ReturnTopStackIdx = context.stack.TopStackIdx;
+		ret.argFrameSize = context.Funcs[val.IntLiteral].argFrameSize;
 		context.CallStack.Push(ret);
 		int instIdx = context.Funcs[val.IntLiteral].StartIdx - 1;
 		context.stack.TopStackIdx += context.Funcs[val.IntLiteral].frameSize;
@@ -909,7 +910,7 @@ private void InstrShr(Value[] values)
 	private void InstrRet(Value[] values){
 		CallStack top = context.CallStack.Pop();
 		context.instrStream.PC = top.ReturnIdx;
-		context.stack.TopStackIdx = top.ReturnTopStackIdx;
+		context.stack.TopStackIdx = top.ReturnTopStackIdx - top.argFrameSize;
 	}
 	private void CallHost(Value[] values){
 		Value[] args = values;
@@ -988,8 +989,15 @@ private void InstrShr(Value[] values)
 			case OpType.AbsMemIdx:
 				return context.stack.Elements[val.IntLiteral];
 			case OpType.RelMemIdx:
+			{
 				CallStack call =  context.CallStack.Peek();
 				return context.stack.Elements[val.IntLiteral + call.ReturnTopStackIdx + context.stack.StackStartIdx];
+			}
+			case OpType.ArgMemIdx:
+			{
+				CallStack call =  context.CallStack.Peek();
+				return context.stack.Elements[call.ReturnTopStackIdx - val.IntLiteral - 1 + context.stack.StackStartIdx];
+			}
 			default:
 				return val;
 		}
@@ -1003,9 +1011,17 @@ private void InstrShr(Value[] values)
 				context.stack.Elements[dst.IntLiteral] = val;
 				break;
 			case OpType.RelMemIdx:
+			{
 				CallStack call =  context.CallStack.Peek();
 				context.stack.Elements[dst.IntLiteral + call.ReturnTopStackIdx + context.stack.StackStartIdx] = val;
 				break;
+			}
+			case OpType.ArgMemIdx:
+			{
+				CallStack call =  context.CallStack.Peek();
+				context.stack.Elements[call.ReturnTopStackIdx - dst.IntLiteral - 1 + context.stack.StackStartIdx] = val;
+				break;
+			}
 		}
 	}
 

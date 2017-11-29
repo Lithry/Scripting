@@ -60,7 +60,7 @@ public class Tables
 		return false;
 	}
 	
-	public bool AddVar(string ident, int scope)
+	public bool AddVar(string ident, int scope, bool isArgument)
 	{
 		VarDecl var;
 
@@ -78,8 +78,17 @@ public class Tables
 		else
 		{
 			FuncDecl func = funcTable[scope];
-			var.Idx = func.varIdx;
-			func.varIdx++;
+			if (isArgument)
+			{
+				var.Idx = func.argIdx;
+				func.argIdx++;
+			}
+			else
+			{
+				var.Idx = func.varIdx;
+				func.varIdx++;
+			}
+			var.isArg = isArgument;
 			funcTable[scope] = func;
 		}
 
@@ -154,6 +163,14 @@ public class Tables
 	public bool FuncIncrementFrameSize(int scope){
 		FuncDecl func = funcTable[scope];
 		func.frameSize += 1;
+		funcTable[scope] = func;
+
+		return true;
+	}
+	
+	public bool FuncIncrementArgFrameSize(int scope){
+		FuncDecl func = funcTable[scope];
+		func.argFrameSize += 1;
 		funcTable[scope] = func;
 
 		return true;
