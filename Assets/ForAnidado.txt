@@ -1,0 +1,21 @@
+push "For anidado usando labels con concatenación de string y numero"
+clh Log, 1
+Var x
+Var i
+Mov i, 0
+Var j
+FOR1:
+Mov x, "[1er For] ----- Pasada Nº "
+Add x, i
+push x
+clh Log, 1
+Mov j, 0
+FOR2:
+Mov x, "[2do For] Pasada Nº "
+Add x, j
+push x
+clh Log, 1
+inc j
+Jl FOR2, j, 3
+Inc i
+Jl FOR1, i, 5

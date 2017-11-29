@@ -184,19 +184,19 @@ public class OpCodes
 	public const int INSTR_SHR					= 15;
 	public const int INSTR_JMP					= 16;
 	public const int INSTR_JE					= 17;
-	public const int INSTR_JNE					= 18;// <-- 3
-	public const int INSTR_JG					= 19;// 3
-	public const int INSTR_JL					= 20;// 3
-	public const int INSTR_JGE					= 21;// 3
-	public const int INSTR_JLE					= 22;// 3
-	public const int INSTR_PUSH					= 23;// 
-	public const int INSTR_POP					= 24;// 
-	public const int INSTR_PAUSE				= 25;// 
-	public const int INSTR_EXIT					= 26;// 
+	public const int INSTR_JNE					= 18;
+	public const int INSTR_JG					= 19;
+	public const int INSTR_JL					= 20;
+	public const int INSTR_JGE					= 21;
+	public const int INSTR_JLE					= 22;
+	public const int INSTR_PUSH					= 23;
+	public const int INSTR_POP					= 24;
+	public const int INSTR_PAUSE				= 25;
+	public const int INSTR_EXIT					= 26;
 	public const int INSTR_JSR					= 27;
 	public const int INSTR_RET					= 28;
 	public const int INSTR_CALLHOST				= 29;
-	public const int INSTR_LN					= 30;// Logaritmo Natural Mathf.Log
+	public const int INSTR_LN					= 30;
 
 	public const int COUNT		 				= 31;
 }

@@ -1,0 +1,38 @@
+FUNC countTo10
+Arg a
+L1:
+Inc a
+push a
+clh Log, 1
+Jl L1, a, 10
+push a
+Jsr suma10
+ret
+ENDFUNC
+
+FUNC suma10
+Arg a
+L2:
+Add a, 10
+push a
+clh Log, 1
+Jl L2, a, 100
+ret
+ENDFUNC
+
+push "Utiliza 2 funciones, 1 llamada por la otra, y labels, con 2 label con el mismo nombre en diferente scope"
+push "Este código cuenta de a 1 hasta el 10, luego de a 10 hasta el 100 y termina restando de a 10 hasta 0"
+clh Log, 2
+Var x
+Mov x, 0
+push x
+Jsr countTo10
+Var z
+Mov z, 90
+L1:
+push z
+clh Log, 1
+Sub z, 10
+Jge L1, z, 0
+push "End"
+clh Log, 1

@@ -419,10 +419,10 @@ public class Script{
 				switch (val2.Type)
 				{
 					case OpType.Int:
-						val1.IntLiteral &= val2.IntLiteral;
+						val1.IntLiteral = val1.IntLiteral & val2.IntLiteral;
 						break;
 					case OpType.Float:
-						val1.IntLiteral &= (int)val2.FloatLiteral;
+						val1.IntLiteral = val1.IntLiteral & (int)val2.FloatLiteral;
 						break;
 					case OpType.String:
 						break;
